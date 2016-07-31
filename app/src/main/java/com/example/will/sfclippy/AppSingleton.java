@@ -11,6 +11,7 @@ public class AppSingleton {
     }
 
     private StorageService storageService;
+    private CharacterStatistics characterStatistics;
 
     private AppSingleton() {
         this.storageService = null;
@@ -22,5 +23,13 @@ public class AppSingleton {
 
     public StorageService getStorageService( ) {
         return storageService;
+    }
+
+    public void setCharacterStatistics( CharacterStatistics statistics ) {
+        this.characterStatistics = statistics;
+    }
+
+    public CharacterStatistics getCharacterStatistics( ) {
+        return characterStatistics;
     }
 }

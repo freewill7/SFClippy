@@ -33,5 +33,6 @@
         android:text="Next Screen"
         android:id="@+id/btnNextScreen"
         android:layout_centerVertical="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true"
+        android:enabled="false" />
 </RelativeLayout>

@@ -2,23 +2,27 @@ package com.example.will.sfclippy;
 
 import android.Manifest;
 import android.accounts.AccountManager;
+import android.app.Application;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.auth.api.credentials.Credential;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
@@ -27,6 +31,7 @@ import com.google.api.services.sheets.v4.SheetsScopes;
 
 import org.w3c.dom.Text;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -137,6 +142,82 @@ public class AccountActivity extends Activity
         return (networkInfo != null && networkInfo.isConnected());
     }
 
+    private void setupStorageService( ) {
+        // Create connection
+        HttpTransport transport = AndroidHttp.newCompatibleTransport();
+        JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+
+        com.google.api.services.sheets.v4.Sheets service =
+                new com.google.api.services.sheets.v4.Sheets.Builder(
+                        transport, jsonFactory, mCredential )
+                        .setApplicationName( "Android app" )
+                        .build();
+
+        try {
+            StorageService ss = new StorageService( service,
+                    "1Mxk7jNAP3twXMeP3LgHCGasUkFpVyxI8J63u3gokDcI");
+            AppSingleton.getInstance().setStorageService( ss );
+        } catch ( Exception e ) {
+            System.out.println("Failed to setup spreadsheet: " + e.getMessage());
+        }
+
+        textAccount.setText( mCredential.getSelectedAccountName() );
+    }
+
+    private class FetchCharacterPreferences extends AsyncTask<Void,Void,CharacterStatistics> {
+        private StorageService storageService;
+        private Context context;
+        private Exception mLastError;
+
+        public FetchCharacterPreferences(StorageService storageService,
+                                         Context context ) {
+            this.storageService = storageService;
+            this.context = context;
+        }
+
+        @Override
+        protected CharacterStatistics doInBackground(Void... params ) {
+            CharacterStatistics statistics = null;
+            try {
+                statistics = storageService.getStatistics( );
+                System.out.println( "Statistics retrieved" );
+            } catch ( IOException ioe ) {
+                mLastError = ioe;
+                cancel(true);
+                //System.out.println("io exception " + ioe.getMessage());
+                //ioe.printStackTrace();
+            }
+            return statistics;
+        }
+
+        @Override
+        protected void onPostExecute(CharacterStatistics ret) {
+            AppSingleton.getInstance().setCharacterStatistics(ret);
+            btnNextScreen.setEnabled(true);
+            Toast t = Toast.makeText( context, "values fetched", Toast.LENGTH_SHORT);
+            t.show();
+        }
+
+        @Override
+        protected void onCancelled() {
+            System.out.println("cancelled " + mLastError.getClass().getName());
+
+            if ( mLastError instanceof UserRecoverableAuthIOException) {
+                startActivityForResult(
+                        ((UserRecoverableAuthIOException) mLastError).getIntent(),
+                        MainActivity.REQUEST_AUTHORIZATION);
+            } else {
+                System.out.println( "Error:" + mLastError.getMessage() );
+            }
+        }
+    }
+
+    private void getCharacterStatistics( StorageService service, Context context ) {
+        FetchCharacterPreferences fcp = new FetchCharacterPreferences( service, context );
+        fcp.execute();
+    }
+
+
     public void getResultsFromApi( ) {
         if ( ! isGooglePlayServicesAvailable() ) {
             System.out.println("get google play services");
@@ -150,25 +231,11 @@ public class AccountActivity extends Activity
         } else {
             System.out.println("All good");
 
-            // Create connection
-            HttpTransport transport = AndroidHttp.newCompatibleTransport();
-            JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+            setupStorageService();
 
-            com.google.api.services.sheets.v4.Sheets service =
-                    new com.google.api.services.sheets.v4.Sheets.Builder(
-                            transport, jsonFactory, mCredential )
-                            .setApplicationName( "Android app" )
-                            .build();
+            getCharacterStatistics( AppSingleton.getInstance().getStorageService(),
+                    getApplicationContext() );
 
-            try {
-                StorageService ss = new StorageService( service,
-                        "1Mxk7jNAP3twXMeP3LgHCGasUkFpVyxI8J63u3gokDcI");
-                AppSingleton.getInstance().setStorageService( ss );
-            } catch ( Exception e ) {
-                System.out.println("Failed to setup spreadsheet: " + e.getMessage());
-            }
-
-            textAccount.setText( mCredential.getSelectedAccountName() );
 
         }
     }

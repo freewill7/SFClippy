@@ -49,9 +49,11 @@ implements View.OnClickListener {
         p2Win = (Button) findViewById(R.id.btnWinP2);
         p2Win.setOnClickListener( this );
 
-        // fetch stats and populate in background
+        // fetch storage method
         StorageService ss = AppSingleton.getInstance().getStorageService();
-        new FetchCharacterPreferences( ss, this.getApplicationContext() ).execute();
+
+        // fetch stats and populate in background
+        statistics = AppSingleton.getInstance().getCharacterStatistics();
     }
 
     private void recordWin( String winner ) {
@@ -122,53 +124,6 @@ implements View.OnClickListener {
             Toast t = Toast.makeText( this.getApplicationContext(),
                     "Unrecognised Activity result", Toast.LENGTH_SHORT );
             t.show();
-        }
-    }
-
-    private class FetchCharacterPreferences extends AsyncTask<Void,Void,CharacterStatistics> {
-        private StorageService storageService;
-        private Context context;
-        private Exception mLastError;
-
-        public FetchCharacterPreferences(StorageService storageService,
-                                         Context context ) {
-            this.storageService = storageService;
-            this.context = context;
-        }
-
-        @Override
-        protected CharacterStatistics doInBackground(Void... params ) {
-            CharacterStatistics statistics = null;
-            try {
-                statistics = storageService.getStatistics( );
-                System.out.println( "Statistics retrieved" );
-            } catch ( IOException ioe ) {
-                mLastError = ioe;
-                cancel(true);
-                //System.out.println("io exception " + ioe.getMessage());
-                //ioe.printStackTrace();
-            }
-            return statistics;
-        }
-
-        @Override
-        protected void onPostExecute(CharacterStatistics ret) {
-            statistics = ret;
-            Toast t = Toast.makeText( context, "values fetched", Toast.LENGTH_SHORT);
-            t.show();
-        }
-
-        @Override
-        protected void onCancelled() {
-            System.out.println("cancelled " + mLastError.getClass().getName());
-
-            if ( mLastError instanceof UserRecoverableAuthIOException) {
-                startActivityForResult(
-                        ((UserRecoverableAuthIOException) mLastError).getIntent(),
-                        MainActivity.REQUEST_AUTHORIZATION);
-            } else {
-                System.out.println( "Error:" + mLastError.getMessage() );
-            }
         }
     }
 
