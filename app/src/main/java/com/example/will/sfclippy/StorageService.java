@@ -19,7 +19,9 @@ public class StorageService {
         this.spreadsheetId = spreadsheetId;
     }
 
-    public void printPreferences() throws IOException {
+    public CharacterStatistics getStatistics() throws IOException {
+        CharacterStatistics statistics = new CharacterStatistics();
+
         String range = "Character Preferences!A2:C";
         ValueRange response = service.spreadsheets().values()
                 .get(spreadsheetId, range)
@@ -31,9 +33,17 @@ public class StorageService {
             System.out.println("Name, Major");
             for (List row : values) {
                 // Print columns A and E, which correspond to indices 0 and 4.
+                String name = (String) row.get(0);
+                String p1Score = (String) row.get(1);
+                String p2Score = (String) row.get(2);
+
+                statistics.addCharacter( name,
+                        Integer.parseInt(p1Score), Integer.parseInt(p2Score) );
                 System.out.printf("%s, %s, %s\n", row.get(0), row.get(1), row.get(2));
             }
         }
+
+        return statistics;
     }
 
     public void recordBattle(String battleDate,

@@ -11,6 +11,7 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
+import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -22,6 +23,7 @@ implements View.OnClickListener {
     private Button p2Button;
     private Button p1Win;
     private Button p2Win;
+    private CharacterStatistics statistics;
 
     private static String p1Name = "Ruaidhri";
     private static String p2Name = "Will";
@@ -46,6 +48,10 @@ implements View.OnClickListener {
 
         p2Win = (Button) findViewById(R.id.btnWinP2);
         p2Win.setOnClickListener( this );
+
+        // fetch stats and populate in background
+        StorageService ss = AppSingleton.getInstance().getStorageService();
+        new FetchCharacterPreferences( ss, this.getApplicationContext() ).execute();
     }
 
     private void recordWin( String winner ) {
@@ -70,10 +76,24 @@ implements View.OnClickListener {
     public void onClick( View v ) {
         if ( p1Button == v ) {
             Intent intent = new Intent(this, CharacterSelectActivity.class);
+
+            PojoCharacterPreference[] prefs = statistics.getP1Preferences();
+            Gson gson = new Gson();
+            String payload = gson.toJson(prefs);
+
+            intent.putExtra( CharacterSelectActivity.PLAYER_PREFERENCES, payload );
+
             startActivityForResult(intent, GET_P1_CHARACTER,
                     ActivityOptions.makeSceneTransitionAnimation(this).toBundle() );
         } else if ( p2Button == v ) {
             Intent intent = new Intent(this, CharacterSelectActivity.class);
+
+            PojoCharacterPreference[] prefs = statistics.getP2Preferences();
+            Gson gson = new Gson();
+            String payload = gson.toJson(prefs);
+
+            intent.putExtra( CharacterSelectActivity.PLAYER_PREFERENCES, payload );
+
             startActivityForResult(intent, GET_P2_CHARACTER,
                     ActivityOptions.makeSceneTransitionAnimation(this).toBundle() );
         } else if ( p1Win == v ) {
@@ -98,6 +118,53 @@ implements View.OnClickListener {
             Toast t = Toast.makeText( this.getApplicationContext(),
                     "Unrecognised Activity result", Toast.LENGTH_SHORT );
             t.show();
+        }
+    }
+
+    private class FetchCharacterPreferences extends AsyncTask<Void,Void,CharacterStatistics> {
+        private StorageService storageService;
+        private Context context;
+        private Exception mLastError;
+
+        public FetchCharacterPreferences(StorageService storageService,
+                                         Context context ) {
+            this.storageService = storageService;
+            this.context = context;
+        }
+
+        @Override
+        protected CharacterStatistics doInBackground(Void... params ) {
+            CharacterStatistics statistics = null;
+            try {
+                statistics = storageService.getStatistics( );
+                System.out.println( "Statistics retrieved" );
+            } catch ( IOException ioe ) {
+                mLastError = ioe;
+                cancel(true);
+                //System.out.println("io exception " + ioe.getMessage());
+                //ioe.printStackTrace();
+            }
+            return statistics;
+        }
+
+        @Override
+        protected void onPostExecute(CharacterStatistics ret) {
+            statistics = ret;
+            Toast t = Toast.makeText( context, "values fetched", Toast.LENGTH_SHORT);
+            t.show();
+        }
+
+        @Override
+        protected void onCancelled() {
+            System.out.println("cancelled " + mLastError.getClass().getName());
+
+            if ( mLastError instanceof UserRecoverableAuthIOException) {
+                startActivityForResult(
+                        ((UserRecoverableAuthIOException) mLastError).getIntent(),
+                        MainActivity.REQUEST_AUTHORIZATION);
+            } else {
+                System.out.println( "Error:" + mLastError.getMessage() );
+            }
         }
     }
 
