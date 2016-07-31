@@ -109,11 +109,15 @@ implements View.OnClickListener {
     @Override
     public void onActivityResult( int requestCode, int resultCode, Intent data ) {
         if ( requestCode == GET_P1_CHARACTER ) {
-            Button btn = (Button) findViewById( R.id.btnChoiceP1 );
-            btn.setText( data.getStringExtra( CharacterSelectActivity.GET_CHARACTER_PROPERTY ));
+            if ( null != data ) {
+                String choice = data.getStringExtra( CharacterSelectActivity.GET_CHARACTER_PROPERTY );
+                p1Button.setText( choice );
+            }
         } else if ( requestCode == GET_P2_CHARACTER ) {
-            Button btn = (Button) findViewById(R.id.btnChoiceP2);
-            btn.setText(data.getStringExtra(CharacterSelectActivity.GET_CHARACTER_PROPERTY));
+            if ( null != data ) {
+                String choice = data.getStringExtra( CharacterSelectActivity.GET_CHARACTER_PROPERTY );
+                p2Button.setText( choice );
+            }
         } else {
             Toast t = Toast.makeText( this.getApplicationContext(),
                     "Unrecognised Activity result", Toast.LENGTH_SHORT );
