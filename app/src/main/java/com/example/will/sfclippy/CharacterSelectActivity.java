@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -45,7 +46,9 @@ public class CharacterSelectActivity extends Activity {
 
         @Override
         public MyAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
-            ViewHolder vh = new ViewHolder( mActivity, new Button(parent.getContext() ));
+            Button btn = (Button) LayoutInflater.from( parent.getContext() )
+                    .inflate( R.layout.button_character, parent, false );
+            ViewHolder vh = new ViewHolder( mActivity, btn );
             return vh;
         }
 
@@ -87,6 +90,7 @@ public class CharacterSelectActivity extends Activity {
         choices.add( "Guile" );
         choices.add( "Ibuki" );
         choices.add( "Balrog" );
+        choices.add( "Juri" );
 
         final RecyclerView listView = (RecyclerView) findViewById( R.id.characterList );
         listView.setHasFixedSize(true);

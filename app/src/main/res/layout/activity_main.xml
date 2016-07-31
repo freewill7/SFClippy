@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:text="Player 1 Win"
         android:id="@+id/btnWinP1"
-        android:layout_centerVertical="true"
+        android:layout_alignParentBottom="true"
         android:layout_alignParentStart="true" />
 
     <Button
@@ -30,16 +30,36 @@
         android:layout_height="wrap_content"
         android:text="Player 1 Choice"
         android:id="@+id/btnChoiceP1"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true" />
+        android:layout_below="@+id/textP1"
+        android:layout_alignEnd="@+id/btnWinP2"
+        android:layout_alignParentStart="true" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Player 2 Choice"
         android:id="@+id/btnChoiceP2"
+        android:layout_below="@+id/textP2"
+        android:layout_alignParentStart="true"
+        android:layout_alignEnd="@+id/btnChoiceP1" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Ruaidhri Choice:"
+        android:id="@+id/textP1"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Will Choice:"
+        android:id="@+id/textP2"
         android:layout_below="@+id/btnChoiceP1"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="44dp" />
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="98dp" />
 
 </RelativeLayout>

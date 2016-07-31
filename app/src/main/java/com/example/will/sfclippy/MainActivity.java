@@ -1,39 +1,19 @@
 package com.example.will.sfclippy;
 
-import android.Manifest;
-import android.accounts.AccountManager;
 import android.app.Activity;
-import android.app.Dialog;
+import android.app.ActivityOptions;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.client.util.ExponentialBackOff;
-import com.google.api.services.sheets.v4.SheetsScopes;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.List;
-
-import pub.devrel.easypermissions.AfterPermissionGranted;
-import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity extends Activity
 implements View.OnClickListener {
@@ -90,10 +70,12 @@ implements View.OnClickListener {
     public void onClick( View v ) {
         if ( p1Button == v ) {
             Intent intent = new Intent(this, CharacterSelectActivity.class);
-            startActivityForResult(intent, GET_P1_CHARACTER);
+            startActivityForResult(intent, GET_P1_CHARACTER,
+                    ActivityOptions.makeSceneTransitionAnimation(this).toBundle() );
         } else if ( p2Button == v ) {
             Intent intent = new Intent(this, CharacterSelectActivity.class);
-            startActivityForResult(intent, GET_P2_CHARACTER);
+            startActivityForResult(intent, GET_P2_CHARACTER,
+                    ActivityOptions.makeSceneTransitionAnimation(this).toBundle() );
         } else if ( p1Win == v ) {
             recordWin( p1Name );
         } else if ( p2Win == v ) {
