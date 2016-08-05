@@ -2,6 +2,7 @@ package com.example.will.sfclippy;
 
 import android.Manifest;
 import android.accounts.AccountManager;
+import android.app.ActivityOptions;
 import android.app.Application;
 import android.app.Dialog;
 import android.content.Context;
@@ -39,10 +40,7 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
 public class AccountActivity extends Activity
-        implements View.OnClickListener, EasyPermissions.PermissionCallbacks {
-    private TextView textAccount;
-    private Button btnNextScreen;
-    private Button btnChooseAccount;
+        implements EasyPermissions.PermissionCallbacks {
     private GoogleAccountCredential mCredential;
 
     private static final String PREF_ACCOUNT_NAME = "accountName";
@@ -55,32 +53,14 @@ public class AccountActivity extends Activity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_account);
-
-        textAccount = (TextView) findViewById( R.id.textAccount );
-
-        btnNextScreen = (Button) findViewById( R.id.btnNextScreen );
-        btnNextScreen.setOnClickListener(this);
-
-        btnChooseAccount = (Button) findViewById( R.id.btnChooseAccount );
-        btnChooseAccount.setOnClickListener(this);
 
         // Initialize credentials and service object
         mCredential = GoogleAccountCredential.usingOAuth2(
                 getApplicationContext(), Arrays.asList(SCOPES))
                 .setBackOff(new ExponentialBackOff());
-    }
 
-    @Override
-    public void onClick( View v ) {
-        if ( btnNextScreen == v ) {
-            Intent intent = new Intent( this, MainActivity.class );
-            startActivity(intent);
-        } else if ( btnChooseAccount == v ) {
-            getResultsFromApi();
-        }
+        getResultsFromApi();
     }
-
 
     void showGooglePlayServicesAvailabilityErrorDialog(
             final int connectionStatusCode) {
@@ -160,19 +140,17 @@ public class AccountActivity extends Activity
         } catch ( Exception e ) {
             System.out.println("Failed to setup spreadsheet: " + e.getMessage());
         }
-
-        textAccount.setText( mCredential.getSelectedAccountName() );
     }
 
     private class FetchCharacterPreferences extends AsyncTask<Void,Void,CharacterStatistics> {
         private StorageService storageService;
-        private Context context;
+        private Activity activity;
         private Exception mLastError;
 
         public FetchCharacterPreferences(StorageService storageService,
-                                         Context context ) {
+                                         Activity activity ) {
             this.storageService = storageService;
-            this.context = context;
+            this.activity = activity;
         }
 
         @Override
@@ -193,9 +171,11 @@ public class AccountActivity extends Activity
         @Override
         protected void onPostExecute(CharacterStatistics ret) {
             AppSingleton.getInstance().setCharacterStatistics(ret);
-            btnNextScreen.setEnabled(true);
-            Toast t = Toast.makeText( context, "values fetched", Toast.LENGTH_SHORT);
-            t.show();
+            Intent intent = new Intent( activity.getApplicationContext(), MainActivity.class );
+            startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(activity).toBundle());
+            finish();
+            // Toast t = Toast.makeText( context, "values fetched", Toast.LENGTH_SHORT);
+            // t.show();
         }
 
         @Override
@@ -213,7 +193,7 @@ public class AccountActivity extends Activity
     }
 
     private void getCharacterStatistics( StorageService service, Context context ) {
-        FetchCharacterPreferences fcp = new FetchCharacterPreferences( service, context );
+        FetchCharacterPreferences fcp = new FetchCharacterPreferences( service, this );
         fcp.execute();
     }
 
@@ -256,7 +236,8 @@ public class AccountActivity extends Activity
         switch ( requestCode ) {
             case REQUEST_GOOGLE_PLAY_SERVICES:
                 if (resultCode != RESULT_OK) {
-                    textAccount.setText("No Google Play Services");
+                    Toast t = Toast.makeText( this, "No Google Play Services", Toast.LENGTH_SHORT );
+                    t.show();
                 } else {
                     getResultsFromApi();
                 }
@@ -272,7 +253,7 @@ public class AccountActivity extends Activity
                         editor.putString(PREF_ACCOUNT_NAME, accountName);
                         editor.apply();
                         mCredential.setSelectedAccountName(accountName);
-                        textAccount.setText(accountName);
+                        //textAccount.setText(accountName);
                         getResultsFromApi();
                     }
                 }

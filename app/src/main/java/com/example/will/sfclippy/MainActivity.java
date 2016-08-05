@@ -14,7 +14,9 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecovera
 import com.google.gson.Gson;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 
 public class MainActivity extends Activity
 implements View.OnClickListener {
@@ -60,12 +62,8 @@ implements View.OnClickListener {
         try {
             StorageService ss = AppSingleton.getInstance().getStorageService();
 
-            Calendar c = Calendar.getInstance();
-            int year = c.get( Calendar.YEAR );
-            int month = c.get( Calendar.MONTH ) + 1;
-            int day = c.get( Calendar.DAY_OF_MONTH );
+            String date = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss").format( new Date() );
 
-            String date = "" + year + "-" + month + "-" + day;
             RecordBattleTask task = new RecordBattleTask(ss, this.getApplicationContext(),
                     date, p1Button.getText().toString(), p2Button.getText().toString(), winner );
             task.execute();
@@ -183,5 +181,4 @@ implements View.OnClickListener {
             }
         }
     }
-
 }
