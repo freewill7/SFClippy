@@ -50,9 +50,14 @@ public class AccountActivity extends Activity
     private static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
     private static final int REQUEST_PERMISSION_GET_ACCOUNTS = 1003;
 
+    private TextView progressLabel;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_account);
+
+        progressLabel = (TextView) findViewById(R.id.progressLabel);
 
         // Initialize credentials and service object
         mCredential = GoogleAccountCredential.usingOAuth2(
@@ -171,9 +176,9 @@ public class AccountActivity extends Activity
         @Override
         protected void onPostExecute(CharacterStatistics ret) {
             AppSingleton.getInstance().setCharacterStatistics(ret);
-            Intent intent = new Intent( activity.getApplicationContext(), MainActivity.class );
+            Intent intent = new Intent( activity, MainActivity.class );
             startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(activity).toBundle());
-            finish();
+            activity.finish();
             // Toast t = Toast.makeText( context, "values fetched", Toast.LENGTH_SHORT);
             // t.show();
         }
@@ -213,6 +218,7 @@ public class AccountActivity extends Activity
 
             setupStorageService();
 
+            progressLabel.setText( "Fetching Statistics");
             getCharacterStatistics( AppSingleton.getInstance().getStorageService(),
                     getApplicationContext() );
 
