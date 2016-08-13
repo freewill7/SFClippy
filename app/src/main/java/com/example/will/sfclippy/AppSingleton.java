@@ -10,26 +10,17 @@ public class AppSingleton {
         return ourInstance;
     }
 
-    private StorageService storageService;
-    private CharacterStatistics characterStatistics;
+    private DataProvider dataProvider;
 
     private AppSingleton() {
-        this.storageService = null;
+        this.dataProvider = null;
     }
 
-    public void setStorageService( StorageService service ) {
-        this.storageService = service;
+    public void setDataProvider( DataProvider dataProvider ) {
+        this.dataProvider = dataProvider;
     }
 
-    public StorageService getStorageService( ) {
-        return storageService;
-    }
-
-    public void setCharacterStatistics( CharacterStatistics statistics ) {
-        this.characterStatistics = statistics;
-    }
-
-    public CharacterStatistics getCharacterStatistics( ) {
-        return characterStatistics;
+    public DataProvider getDataProvider( ) {
+        return dataProvider;
     }
 }

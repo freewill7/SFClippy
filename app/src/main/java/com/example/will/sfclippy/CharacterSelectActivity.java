@@ -12,8 +12,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import com.google.api.client.util.Data;
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,17 +25,17 @@ import java.util.Random;
 
 public class CharacterSelectActivity extends Activity {
     static public final String GET_CHARACTER_PROPERTY = "choice";
-    static public final String PLAYER_PREFERENCES = "preferences";
+    static public final String PLAYER_ID = "player_id";
 
     public static class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
-        private PojoCharacterPreference[] mDataset;
+        private DataProvider.CharacterPreference[] mDataset;
         private Activity mActivity;
-        private PojoCharacterPreference mRandomChar;
+        private DataProvider.CharacterPreference mRandomChar;
 
         public static class ViewHolder extends RecyclerView.ViewHolder {
             public Activity mActivity;
             public Button mButton;
-            public PojoCharacterPreference mCharacter;
+            public DataProvider.CharacterPreference mCharacter;
 
             public ViewHolder( Activity activity, Button button ) {
                 super(button);
@@ -44,21 +46,21 @@ public class CharacterSelectActivity extends Activity {
                     @Override
                     public void onClick(View v) {
                         Intent resultData = new Intent();
-                        resultData.putExtra(GET_CHARACTER_PROPERTY, getCharacter().name );
+                        resultData.putExtra(GET_CHARACTER_PROPERTY, getCharacter().getCharacterName() );
                         mActivity.setResult(Activity.RESULT_OK, resultData);
                         mActivity.finish();
                     }
                 });
             }
 
-            private PojoCharacterPreference getCharacter() {
+            private DataProvider.CharacterPreference getCharacter() {
                 return mCharacter;
             }
         }
 
         public MyAdapter( Activity activity,
-                          PojoCharacterPreference[] myDataset,
-                          PojoCharacterPreference randomChar ) {
+                          DataProvider.CharacterPreference[] myDataset,
+                          DataProvider.CharacterPreference randomChar ) {
             mActivity = activity;
             mDataset = myDataset;
             mRandomChar = randomChar;
@@ -76,14 +78,14 @@ public class CharacterSelectActivity extends Activity {
         public void onBindViewHolder( ViewHolder holder, int position ) {
 
             if ( 0 == position ) {
-                holder.mButton.setText("RANDOM (" + mRandomChar.name + ")");
+                holder.mButton.setText("RANDOM (" + mRandomChar.getCharacterName() + ")");
                 // TODO change to tint
                 holder.mButton.setBackgroundColor(
                         mActivity.getResources().getColor( R.color.colorAccent ) );
                 holder.mCharacter = mRandomChar;
             } else {
-                PojoCharacterPreference pref = mDataset[position-1];
-                holder.mButton.setText(pref.name + "(" + pref.weighting + ")");
+                DataProvider.CharacterPreference pref = mDataset[position-1];
+                holder.mButton.setText(pref.getCharacterName() + "(" + pref.getScore() + ")");
                 // TODO change to tint
                 holder.mButton.setBackgroundColor(
                         mActivity.getResources().getColor( R.color.colorPrimary ) );
@@ -97,20 +99,21 @@ public class CharacterSelectActivity extends Activity {
         }
     }
 
-    private PojoCharacterPreference randomCharacter( List<PojoCharacterPreference> chars ) {
+    private DataProvider.CharacterPreference randomCharacter(
+            List<DataProvider.CharacterPreference> chars ) {
         int total = 0;
-        for ( PojoCharacterPreference character : chars ) {
-            total += character.weighting;
+        for ( DataProvider.CharacterPreference character : chars ) {
+            total += character.getScore();
         }
 
         Random rand = new Random(Calendar.getInstance().getTimeInMillis());
         int choice = rand.nextInt() % total;
 
         int tally = 0;
-        PojoCharacterPreference ret = chars.get(0);
-        for ( PojoCharacterPreference character : chars ) {
+        DataProvider.CharacterPreference ret = chars.get(0);
+        for ( DataProvider.CharacterPreference character : chars ) {
             ret = character;
-            tally += ret.weighting;
+            tally += ret.getScore();
             if ( tally > choice ) {
                 break;
             }
@@ -125,27 +128,24 @@ public class CharacterSelectActivity extends Activity {
         setContentView(R.layout.activity_character_select);
 
         Intent intent = getIntent();
-        String preferences = intent.getStringExtra( PLAYER_PREFERENCES );
+        String playerId = intent.getStringExtra( PLAYER_ID );
         Gson gson = new Gson();
-        PojoCharacterPreference[] chars = gson.fromJson( preferences,
-                PojoCharacterPreference[].class );
 
-        LinkedList<PojoCharacterPreference> choices = new LinkedList<>();
-        for ( PojoCharacterPreference choice : chars ) {
-            Log.d( "CharacterSelectActivity", "Adding " + choice.name);
-            choices.add(choice);
-        }
+        List<DataProvider.CharacterPreference> preferences =
+                AppSingleton.getInstance().getDataProvider().getCharacterPreferences( playerId );
 
-        PojoCharacterPreference randomChar = randomCharacter( choices );
+        List<DataProvider.CharacterPreference> choices = new ArrayList<>( preferences );
+        DataProvider.CharacterPreference randomChar = randomCharacter( choices );
 
-        Collections.sort(choices, new Comparator<PojoCharacterPreference>() {
+        Collections.sort(choices, new Comparator<DataProvider.CharacterPreference>() {
             @Override
-            public int compare(PojoCharacterPreference lhs, PojoCharacterPreference rhs) {
+            public int compare(DataProvider.CharacterPreference lhs,
+                               DataProvider.CharacterPreference rhs) {
                 // higher rating goes first
-                int diff = rhs.weighting - lhs.weighting;
+                int diff = rhs.getScore() - lhs.getScore();
                 if ( 0 == diff ) {
                     // then order by ascending alphabetical
-                    diff = lhs.name.compareTo( rhs.name );
+                    diff = lhs.getCharacterName().compareTo( rhs.getCharacterName() );
                 }
 
                 return diff;
@@ -160,7 +160,8 @@ public class CharacterSelectActivity extends Activity {
         listView.setLayoutManager(layoutManager);
 
         // specify an adapter
-        PojoCharacterPreference[] arr = choices.toArray( new PojoCharacterPreference[choices.size()]);
+        DataProvider.CharacterPreference[] arr = choices.toArray(
+                new DataProvider.CharacterPreference[choices.size()]);
         RecyclerView.Adapter mAdapter = new MyAdapter( this, arr, randomChar );
         listView.setAdapter(mAdapter);
 

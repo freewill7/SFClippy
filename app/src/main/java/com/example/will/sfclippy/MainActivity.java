@@ -2,35 +2,27 @@ package com.example.will.sfclippy;
 
 import android.app.Activity;
 import android.app.ActivityOptions;
-import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
 import com.google.gson.Gson;
-
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
 
 public class MainActivity extends Activity
 implements View.OnClickListener {
+    private DataProvider dataProvider;
 
+    private TextView p1Text;
+    private TextView p2Text;
     private Button p1Button;
     private Button p2Button;
     private Button p1Win;
     private Button p2Win;
-    private CharacterStatistics statistics;
 
-    private static String p1Name = "Ruaidhri";
-    private static String p2Name = "Will";
-
-    static final int REQUEST_AUTHORIZATION = 1001;
     static public final int GET_P1_CHARACTER = 1;
     static public final int GET_P2_CHARACTER = 2;
 
@@ -38,6 +30,13 @@ implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        this.dataProvider = AppSingleton.getInstance().getDataProvider();
+
+        p1Text = (TextView) findViewById(R.id.textP1);
+        p1Text.setText( dataProvider.getPlayer1Name() + " choice:");
+        p2Text = (TextView) findViewById(R.id.textP2);
+        p2Text.setText( dataProvider.getPlayer2Name() + " choice:");
 
         p1Button = (Button) findViewById(R.id.btnChoiceP1);
         p1Button.setOnClickListener( this );
@@ -50,26 +49,10 @@ implements View.OnClickListener {
 
         p2Win = (Button) findViewById(R.id.btnWinP2);
         p2Win.setOnClickListener( this );
-
-        // fetch storage method
-        StorageService ss = AppSingleton.getInstance().getStorageService();
-
-        // fetch stats and populate in background
-        statistics = AppSingleton.getInstance().getCharacterStatistics();
     }
 
     private void recordWin( String winner ) {
-        try {
-            StorageService ss = AppSingleton.getInstance().getStorageService();
-
-            String date = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss").format( new Date() );
-
-            RecordBattleTask task = new RecordBattleTask(ss, this.getApplicationContext(),
-                    date, p1Button.getText().toString(), p2Button.getText().toString(), winner );
-            task.execute();
-        } catch ( Exception e ) {
-            System.out.println("Failed to record battle: " + e.getMessage());
-        }
+        Log.e( getLocalClassName(), "record win not implemented - " + winner);
     }
 
     @Override
@@ -77,29 +60,23 @@ implements View.OnClickListener {
         if ( p1Button == v ) {
             Intent intent = new Intent(this, CharacterSelectActivity.class);
 
-            PojoCharacterPreference[] prefs = statistics.getP1Preferences();
-            Gson gson = new Gson();
-            String payload = gson.toJson(prefs);
-
-            intent.putExtra( CharacterSelectActivity.PLAYER_PREFERENCES, payload );
+            String player1Id = dataProvider.getPlayer1Id();
+            intent.putExtra( CharacterSelectActivity.PLAYER_ID, player1Id );
 
             startActivityForResult(intent, GET_P1_CHARACTER,
                     ActivityOptions.makeSceneTransitionAnimation(this).toBundle() );
         } else if ( p2Button == v ) {
             Intent intent = new Intent(this, CharacterSelectActivity.class);
 
-            PojoCharacterPreference[] prefs = statistics.getP2Preferences();
-            Gson gson = new Gson();
-            String payload = gson.toJson(prefs);
-
-            intent.putExtra( CharacterSelectActivity.PLAYER_PREFERENCES, payload );
+            String player2Id = dataProvider.getPlayer2Id();
+            intent.putExtra( CharacterSelectActivity.PLAYER_ID, player2Id );
 
             startActivityForResult(intent, GET_P2_CHARACTER,
                     ActivityOptions.makeSceneTransitionAnimation(this).toBundle() );
         } else if ( p1Win == v ) {
-            recordWin( p1Name );
+            recordWin( AppSingleton.getInstance().getDataProvider().getPlayer1Id() );
         } else if ( p2Win == v ) {
-            recordWin( p2Name );
+            recordWin( AppSingleton.getInstance().getDataProvider().getPlayer2Id() );
         } else {
             Toast t = Toast.makeText( v.getContext(), "Unknown button", Toast.LENGTH_SHORT );
             t.show();
@@ -122,63 +99,6 @@ implements View.OnClickListener {
             Toast t = Toast.makeText( this.getApplicationContext(),
                     "Unrecognised Activity result", Toast.LENGTH_SHORT );
             t.show();
-        }
-    }
-
-    private class RecordBattleTask extends AsyncTask<Void,Void,Void> {
-        private StorageService storageService;
-        private Context context;
-        private Exception mLastError;
-        private String mDate;
-        private String mPlayer1;
-        private String mPlayer2;
-        private String winner;
-
-        public RecordBattleTask(StorageService storageService,
-                                Context context,
-                                String date,
-                                String p1,
-                                String p2,
-                                String winner ) {
-            this.storageService = storageService;
-            this.context = context;
-            this.mDate = date;
-            this.mPlayer1 = p1;
-            this.mPlayer2 = p2;
-            this.winner = winner;
-        }
-
-        @Override
-        protected Void doInBackground(Void... params ) {
-            try {
-                storageService.recordBattle( mDate, mPlayer1, mPlayer2, winner );
-                System.out.println( "Battle recorded" );
-            } catch ( IOException ioe ) {
-                mLastError = ioe;
-                cancel(true);
-                //System.out.println("io exception " + ioe.getMessage());
-                //ioe.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void ret) {
-            Toast t = Toast.makeText( context, "spreadsheet updated", Toast.LENGTH_SHORT);
-            t.show();
-        }
-
-        @Override
-        protected void onCancelled() {
-            System.out.println("cancelled " + mLastError.getClass().getName());
-
-            if ( mLastError instanceof UserRecoverableAuthIOException) {
-                startActivityForResult(
-                        ((UserRecoverableAuthIOException) mLastError).getIntent(),
-                        MainActivity.REQUEST_AUTHORIZATION);
-            } else {
-                System.out.println( "Error:" + mLastError.getMessage() );
-            }
         }
     }
 }
