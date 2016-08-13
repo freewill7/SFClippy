@@ -14,6 +14,8 @@ public class DataProvider {
     private DriveHelper helper;
     private List<PlayerInfo> players;
     private List<BattleResult> battleResults;
+    private List<CharacterPreference> p1Preferences;
+    private List<CharacterPreference> p2Preferences;
     private CurrentState currentState;
 
     public static class CharacterPreference {
@@ -163,11 +165,15 @@ public class DataProvider {
     public DataProvider( DriveHelper helper,
                          List<PlayerInfo> players,
                          List<BattleResult> battles,
-                         CurrentState currentState ) {
+                         CurrentState currentState,
+                         List<CharacterPreference> p1Preferences,
+                         List<CharacterPreference> p2Preferences ) {
         this.helper = helper;
         this.players = players;
         this.battleResults = battles;
         this.currentState = currentState;
+        this.p1Preferences = p1Preferences;
+        this.p2Preferences = p2Preferences;
     }
 
     PlayerInfo getPlayerById( String id ) {
@@ -206,29 +212,14 @@ public class DataProvider {
     }
 
     public List<CharacterPreference> getCharacterPreferences( String playerId ) {
-        List<CharacterPreference> preferences = new ArrayList<>();
-        preferences.add( new CharacterPreference("Ryu",1));
-        preferences.add( new CharacterPreference("Chun-Li",1));
-        preferences.add( new CharacterPreference("Nash",1));
-        preferences.add( new CharacterPreference("M.Bison",1));
-        preferences.add( new CharacterPreference("Cammy",1));
-        preferences.add( new CharacterPreference("Birdie",1));
-        preferences.add( new CharacterPreference("Ken",1));
-        preferences.add( new CharacterPreference("Necalli",1));
-        preferences.add( new CharacterPreference("Vega",1));
-        preferences.add( new CharacterPreference("R.Mika",1));
-        preferences.add( new CharacterPreference("Rashid",1));
-        preferences.add( new CharacterPreference("Karin",1));
-        preferences.add( new CharacterPreference("Zangief",1));
-        preferences.add( new CharacterPreference("Laura",1));
-        preferences.add( new CharacterPreference("Dhalsim",1));
-        preferences.add( new CharacterPreference("F.A.N.G.",1));
-        preferences.add( new CharacterPreference("Alex",1));
-        preferences.add( new CharacterPreference("Guile",1));
-        preferences.add( new CharacterPreference("Ibuki",1));
-        preferences.add( new CharacterPreference("Balrog",1));
-        preferences.add( new CharacterPreference("Juri",1));
-        return preferences;
+        if ( 0 == playerId.compareTo( getPlayer1Id() )) {
+            return p1Preferences;
+        } else if ( 0 == playerId.compareTo( getPlayer2Id() )) {
+            return p2Preferences;
+        } else {
+            Log.e( getClass().getName(), "Unknown player " + playerId );
+            return new ArrayList<>();
+        }
     }
 
     public void recordWin( Date time, String player1Choice, String player2Choice, String winner )

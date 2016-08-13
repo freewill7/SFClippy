@@ -1,10 +1,7 @@
 package com.example.will.sfclippy;
 
-import android.app.Activity;
 import android.os.AsyncTask;
 import android.util.Log;
-
-import com.google.android.gms.common.api.Result;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,6 +30,52 @@ public class DataProviderSetup extends AsyncTask<Void,String,DataProvider> {
     public void onProgressUpdate( String... progress ) {
         Log.d( getClass().getName(), progress[0]);
         callback.onProgressUpdate(progress[0]);
+    }
+
+    private List<DataProvider.CharacterPreference> defaultPreferences( ) {
+        List<DataProvider.CharacterPreference> preferences = new ArrayList<>();
+        preferences.add( new DataProvider.CharacterPreference("Ryu",1));
+        preferences.add( new DataProvider.CharacterPreference("Chun-Li",1));
+        preferences.add( new DataProvider.CharacterPreference("Nash",1));
+        preferences.add( new DataProvider.CharacterPreference("M.Bison",1));
+        preferences.add( new DataProvider.CharacterPreference("Cammy",1));
+        preferences.add( new DataProvider.CharacterPreference("Birdie",1));
+        preferences.add( new DataProvider.CharacterPreference("Ken",1));
+        preferences.add( new DataProvider.CharacterPreference("Necalli",1));
+        preferences.add( new DataProvider.CharacterPreference("Vega",1));
+        preferences.add( new DataProvider.CharacterPreference("R.Mika",1));
+        preferences.add( new DataProvider.CharacterPreference("Rashid",1));
+        preferences.add( new DataProvider.CharacterPreference("Karin",1));
+        preferences.add( new DataProvider.CharacterPreference("Zangief",1));
+        preferences.add( new DataProvider.CharacterPreference("Laura",1));
+        preferences.add( new DataProvider.CharacterPreference("Dhalsim",1));
+        preferences.add( new DataProvider.CharacterPreference("F.A.N.G.",1));
+        preferences.add( new DataProvider.CharacterPreference("Alex",1));
+        preferences.add( new DataProvider.CharacterPreference("Guile",1));
+        preferences.add( new DataProvider.CharacterPreference("Ibuki",1));
+        preferences.add( new DataProvider.CharacterPreference("Balrog",1));
+        preferences.add( new DataProvider.CharacterPreference("Juri",1));
+        return preferences;
+    }
+
+    private List<DataProvider.CharacterPreference> fetchOrBootstrapPlayers( String playerId,
+                                                                            String description ) {
+        publishProgress( "Fetching " + description + " characters..." );
+        List<DataProvider.CharacterPreference> chars = helper.fetchCharacters( playerId );
+        if ( null == chars ) {
+            publishProgress( "Creating " + description + " characters...");
+            chars = defaultPreferences();
+
+            try {
+                helper.storeCharacters( playerId, chars );
+            } catch ( IOException ioe ) {
+                Log.e(getClass().getName(), "Failed to store " + description + " characters", ioe);
+                cancel(true);
+            }
+        }
+        Log.d( getClass().getName(), description + " count " + chars.size());
+
+        return chars;
     }
 
     @Override
@@ -89,7 +132,15 @@ public class DataProviderSetup extends AsyncTask<Void,String,DataProvider> {
         Log.d( getClass().getName(), "P1 id: " + state.getPlayer1Id());
         Log.d( getClass().getName(), "P2 id: " + state.getPlayer2Id());
 
-        return new DataProvider( helper, playerInfo, results, state );
+        publishProgress( "Fetching player 1 characters...");
+        List<DataProvider.CharacterPreference> p1Chars = fetchOrBootstrapPlayers(
+                state.getPlayer1Id(),
+                "P1" );
+        List<DataProvider.CharacterPreference> p2Chars = fetchOrBootstrapPlayers(
+                state.getPlayer2Id(),
+                "P2" );
+
+        return new DataProvider( helper, playerInfo, results, state, p1Chars, p2Chars );
     }
 
     @Override

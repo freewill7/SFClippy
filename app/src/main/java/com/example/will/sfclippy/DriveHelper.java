@@ -107,6 +107,22 @@ public class DriveHelper {
         }
     }
 
+    public static class PojoCharacter {
+        public String name;
+        public int score;
+
+        public PojoCharacter( String name, int score ) {
+            this.name = name;
+            this.score = score;
+        }
+
+        public DataProvider.CharacterPreference toCharacterPreference() {
+            DataProvider.CharacterPreference pref = new DataProvider.CharacterPreference( name,
+                    score );
+            return pref;
+        }
+    }
+
     private DriveFile getFile( DriveFolder directory, String title ) {
         DriveFile ret = null;
 
@@ -226,6 +242,35 @@ public class DriveHelper {
             }
         }
         return results;
+    }
+
+    static String getCharsPath( String playerId ) {
+        return "characters_" + playerId + ".json";
+    }
+
+    protected void storeCharacters( String playerId,
+                                    List<DataProvider.CharacterPreference> characters )
+            throws IOException {
+        PojoCharacter[] pojos = new PojoCharacter[characters.size()];
+        int idx = 0;
+        for ( DataProvider.CharacterPreference pref : characters ) {
+            pojos[idx] = new PojoCharacter( pref.getCharacterName(), pref.getScore() );
+            idx++;
+        }
+        storeIntoDrive( getCharsPath(playerId), pojos );
+    }
+
+    protected List<DataProvider.CharacterPreference> fetchCharacters( String playerId ) {
+        PojoCharacter[] pojos = fetchFromDrive( getCharsPath(playerId), PojoCharacter[].class);
+        if ( null == pojos ) {
+            return null;
+        }
+        
+        List<DataProvider.CharacterPreference> ret = new ArrayList<>();
+        for ( PojoCharacter pojo : pojos ) {
+            ret.add( pojo.toCharacterPreference() );
+        }
+        return ret;
     }
 
 }
