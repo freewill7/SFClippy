@@ -17,6 +17,8 @@ import com.google.android.gms.common.api.Result;
 import org.w3c.dom.Text;
 
 import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -101,9 +103,18 @@ public class ResultsActivity extends Activity {
         String player1Id = provider.getPlayer1Id();
         String player2Id = provider.getPlayer2Id();
 
-        // specify an adapter
+        // fetch results to display
         List<DataProvider.BattleResult> results = AppSingleton.getInstance().getDataProvider()
                 .getCurrentPlayerResults();
+        Collections.sort(results, new Comparator<DataProvider.BattleResult>() {
+            @Override
+            public int compare(DataProvider.BattleResult lhs, DataProvider.BattleResult rhs) {
+                // descending date/time order
+                return rhs.getDate().compareTo(lhs.getDate());
+            }
+        });
+
+        // create adapter
         Log.d( getLocalClassName(), "Creating adapter for " + results.size());
         RecyclerView.Adapter mAdapter = new ResultsAdapter( results, player1Id, player2Id );
         listView.setAdapter(mAdapter);
