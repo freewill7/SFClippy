@@ -129,7 +129,6 @@ public class CharacterSelectActivity extends Activity {
 
         Intent intent = getIntent();
         String playerId = intent.getStringExtra( PLAYER_ID );
-        Gson gson = new Gson();
 
         List<DataProvider.CharacterPreference> preferences =
                 AppSingleton.getInstance().getDataProvider().getCharacterPreferences( playerId );

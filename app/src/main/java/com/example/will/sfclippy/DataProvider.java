@@ -1,6 +1,7 @@
 package com.example.will.sfclippy;
 
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,12 +28,25 @@ public class DataProvider {
             this.score = score;
         }
 
+        /**
+         * Copy constructor.
+         * @param toCopy The preference to copy.
+         */
+        public CharacterPreference( CharacterPreference toCopy ) {
+            characterName = toCopy.characterName;
+            score = toCopy.score;
+        }
+
         public String getCharacterName( ) {
             return characterName;
         }
 
         public int getScore( ) {
             return score;
+        }
+
+        public void cycleScore( ) {
+            score = (score + 1) % 3;
         }
     }
 
@@ -234,5 +248,22 @@ public class DataProvider {
     public List<BattleResult> getCurrentPlayerResults( ) {
         // TODO filter by current players
         return battleResults;
+    }
+
+    public void replaceCharacterPreferences( String playerId,
+                                             List<DataProvider.CharacterPreference> prefs ) {
+        try {
+            if ( 0 == getPlayer1Id().compareTo(playerId) ) {
+                this.p1Preferences = prefs;
+                helper.storeCharacters( playerId, prefs );
+            } else if ( 0 == getPlayer2Id().compareTo(playerId) ) {
+                this.p2Preferences = prefs;
+                helper.storeCharacters( playerId, prefs );
+            } else {
+                Log.e( getClass().getName(), "Couldn't find player id " + playerId );
+            }
+        } catch ( IOException ioe ) {
+            Log.e( getClass().getName(), "Problem saving preferences", ioe);
+        }
     }
 }

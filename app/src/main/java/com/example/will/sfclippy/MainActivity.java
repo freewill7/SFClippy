@@ -29,6 +29,8 @@ implements View.OnClickListener {
     private Button btnResults;
     private Button p1Win;
     private Button p2Win;
+    private Button btnP1Preferences;
+    private Button btnP2Preferences;
 
     static public final int GET_P1_CHARACTER = 1;
     static public final int GET_P2_CHARACTER = 2;
@@ -62,6 +64,12 @@ implements View.OnClickListener {
 
         p2Win = (Button) findViewById(R.id.btnWinP2);
         p2Win.setOnClickListener( this );
+
+        btnP1Preferences = (Button) findViewById(R.id.btnPlayer1Prefs);
+        btnP1Preferences.setOnClickListener( this );
+
+        btnP2Preferences = (Button) findViewById(R.id.btnPlayer2Prefs);
+        btnP2Preferences.setOnClickListener( this );
     }
 
     private static class RecordWinTask extends AsyncTask<Void,Void,Void> {
@@ -123,11 +131,21 @@ implements View.OnClickListener {
             startActivityForResult(intent, GET_P2_CHARACTER,
                     ActivityOptions.makeSceneTransitionAnimation(this).toBundle() );
         } else if ( p1Win == v ) {
-            recordWin( AppSingleton.getInstance().getDataProvider().getPlayer1Id() );
+            recordWin(dataProvider.getPlayer1Id());
         } else if ( p2Win == v ) {
-            recordWin(AppSingleton.getInstance().getDataProvider().getPlayer2Id());
+            recordWin(dataProvider.getPlayer2Id());
         } else if ( btnResults == v ) {
-            Intent intent = new Intent( this, ResultsActivity.class );
+            Intent intent = new Intent(this, ResultsActivity.class);
+            startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
+        } else if ( btnP1Preferences == v ) {
+            Intent intent = new Intent(this, CharacterPreferenceActivity.class);
+            intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY,
+                    dataProvider.getPlayer1Id());
+            startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
+        } else if ( btnP2Preferences == v ) {
+            Intent intent = new Intent(this, CharacterPreferenceActivity.class);
+            intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY,
+                    dataProvider.getPlayer2Id());
             startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
         } else {
             Toast t = Toast.makeText( v.getContext(), "Unknown button", Toast.LENGTH_SHORT );
