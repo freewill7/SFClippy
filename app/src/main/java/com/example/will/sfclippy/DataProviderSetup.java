@@ -89,7 +89,7 @@ public class DataProviderSetup extends AsyncTask<Void,String,DataProvider> {
         Log.d( getClass().getName(), "P1 id: " + state.getPlayer1Id());
         Log.d( getClass().getName(), "P2 id: " + state.getPlayer2Id());
 
-        return new DataProvider( playerInfo, results, state );
+        return new DataProvider( helper, playerInfo, results, state );
     }
 
     @Override

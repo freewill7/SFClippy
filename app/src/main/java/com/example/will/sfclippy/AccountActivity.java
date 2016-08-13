@@ -108,6 +108,7 @@ implements GoogleApiClient.ConnectionCallbacks,
 
         Intent intent = new Intent( this, MainActivity.class );
         startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
+        finish();
     }
 
 }

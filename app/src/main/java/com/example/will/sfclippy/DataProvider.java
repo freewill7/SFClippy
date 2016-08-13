@@ -2,6 +2,7 @@ package com.example.will.sfclippy;
 
 import android.util.Log;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.List;
  * Created by will on 10/08/2016.
  */
 public class DataProvider {
+    private DriveHelper helper;
     private List<PlayerInfo> players;
     private List<BattleResult> battleResults;
     private CurrentState currentState;
@@ -84,6 +86,32 @@ public class DataProvider {
         public String getWinnerId( ) {
             return winnerId;
         }
+
+        /**
+         * Fetch the character used by a given player id.
+         * @param playerId The player id we're interested in.
+         * @return The character the player used.
+         */
+        public String characterFor( String playerId ) {
+            if ( 0 == playerId.compareTo(p1Id)) {
+                return p1Character;
+            } else if ( 0 == playerId.compareTo(p2Id)) {
+                return p2Character;
+            } else {
+                return "unknown";
+            }
+        }
+
+        /**
+         * Return whether the provided player on the battle.
+         * @param playerId The player id to look up results for.
+         */
+        public boolean winner( String playerId ) {
+            if ( 0 == playerId.compareTo(winnerId)) {
+                return true;
+            }
+            return false;
+        }
     }
 
     /**
@@ -132,9 +160,11 @@ public class DataProvider {
         }
     }
 
-    public DataProvider( List<PlayerInfo> players,
+    public DataProvider( DriveHelper helper,
+                         List<PlayerInfo> players,
                          List<BattleResult> battles,
                          CurrentState currentState ) {
+        this.helper = helper;
         this.players = players;
         this.battleResults = battles;
         this.currentState = currentState;
@@ -199,5 +229,19 @@ public class DataProvider {
         preferences.add( new CharacterPreference("Balrog",1));
         preferences.add( new CharacterPreference("Juri",1));
         return preferences;
+    }
+
+    public void recordWin( Date time, String player1Choice, String player2Choice, String winner )
+    throws IOException {
+        battleResults.add( new BattleResult(time, getPlayer1Id(), player1Choice,
+                getPlayer2Id(), player2Choice,
+                winner ));
+
+        helper.storeResults( battleResults );
+    }
+
+    public List<BattleResult> getCurrentPlayerResults( ) {
+        // TODO filter by current players
+        return battleResults;
     }
 }
