@@ -5,18 +5,20 @@ import android.app.ActivityOptions;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
-
 import java.io.IOException;
 import java.util.Calendar;
 
-public class MainActivity extends Activity
+public class MainActivity extends AppCompatActivity
 implements View.OnClickListener {
     private DataProvider dataProvider;
 
@@ -26,14 +28,68 @@ implements View.OnClickListener {
     private TextView p2Text;
     private Button p1Button;
     private Button p2Button;
-    private Button btnResults;
     private Button p1Win;
     private Button p2Win;
-    private Button btnP1Preferences;
-    private Button btnP2Preferences;
 
     static public final int GET_P1_CHARACTER = 1;
     static public final int GET_P2_CHARACTER = 2;
+
+    private class MenuListener implements View.OnClickListener {
+        private final Activity parent;
+        private final Button p1Preferences;
+        private final Button p2Preferences;
+        private final Button results;
+        private final DataProvider dataProvider;
+
+        public MenuListener( Activity parent,
+                             Button p1Preferences,
+                             Button p2Preferences,
+                             Button results,
+                             DataProvider dataProvider ) {
+            this.parent = parent;
+            this.p1Preferences = p1Preferences;
+            this.p2Preferences = p2Preferences;
+            this.results = results;
+            this.dataProvider = dataProvider;
+        }
+
+        @Override
+        public void onClick( View v ) {
+            if ( p1Preferences == v ) {
+                Intent intent = new Intent(parent, CharacterPreferenceActivity.class);
+                intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY,
+                        dataProvider.getPlayer1Id());
+                startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
+            } else if ( p2Preferences == v ) {
+                Intent intent = new Intent(parent, CharacterPreferenceActivity.class);
+                intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY,
+                        dataProvider.getPlayer2Id());
+                startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
+            } else if ( results == v ) {
+                Intent intent = new Intent(parent, ResultsActivity.class);
+                startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
+            }
+        }
+    };
+
+    private String labelPreferences( String playerName ) {
+        return playerName + " prefs";
+    }
+
+    private void setupDrawer( ) {
+        Button btnP1Preferences = (Button) findViewById(R.id.btnPlayer1Prefs);
+        btnP1Preferences.setText( labelPreferences(dataProvider.getPlayer1Name()) );
+        Button btnP2Preferences = (Button) findViewById(R.id.btnPlayer2Prefs);
+        btnP2Preferences.setText( labelPreferences(dataProvider.getPlayer2Name()) );
+        Button btnResults = (Button) findViewById(R.id.btnResults);
+
+        MenuListener listener = new MenuListener( this,
+                btnP1Preferences, btnP2Preferences, btnResults,
+                dataProvider );
+        btnP1Preferences.setOnClickListener( listener );
+        btnP2Preferences.setOnClickListener( listener );
+        btnResults.setOnClickListener( listener );
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +100,17 @@ implements View.OnClickListener {
 
         p1Choice = "unknown";
         p2Choice = "unknown";
+
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
+        setSupportActionBar(myToolbar);
+
+        DrawerLayout drawerLayout = (DrawerLayout) findViewById( R.id.mainDrawerLayout );
+
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle( this, drawerLayout,
+                myToolbar, R.string.drawer_open, R.string.drawer_close );
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
+
 
         p1Text = (TextView) findViewById(R.id.textP1);
         p1Text.setText( dataProvider.getPlayer1Name() + " choice:");
@@ -56,20 +123,13 @@ implements View.OnClickListener {
         p2Button = (Button) findViewById(R.id.btnChoiceP2);
         p2Button.setOnClickListener( this );
 
-        btnResults = (Button) findViewById(R.id.btnResults);
-        btnResults.setOnClickListener( this );
-
         p1Win = (Button) findViewById(R.id.btnWinP1);
         p1Win.setOnClickListener( this );
 
         p2Win = (Button) findViewById(R.id.btnWinP2);
         p2Win.setOnClickListener( this );
 
-        btnP1Preferences = (Button) findViewById(R.id.btnPlayer1Prefs);
-        btnP1Preferences.setOnClickListener( this );
-
-        btnP2Preferences = (Button) findViewById(R.id.btnPlayer2Prefs);
-        btnP2Preferences.setOnClickListener( this );
+        setupDrawer();
     }
 
     private static class RecordWinTask extends AsyncTask<Void,Void,Void> {
@@ -134,19 +194,6 @@ implements View.OnClickListener {
             recordWin(dataProvider.getPlayer1Id());
         } else if ( p2Win == v ) {
             recordWin(dataProvider.getPlayer2Id());
-        } else if ( btnResults == v ) {
-            Intent intent = new Intent(this, ResultsActivity.class);
-            startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
-        } else if ( btnP1Preferences == v ) {
-            Intent intent = new Intent(this, CharacterPreferenceActivity.class);
-            intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY,
-                    dataProvider.getPlayer1Id());
-            startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
-        } else if ( btnP2Preferences == v ) {
-            Intent intent = new Intent(this, CharacterPreferenceActivity.class);
-            intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY,
-                    dataProvider.getPlayer2Id());
-            startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
         } else {
             Toast t = Toast.makeText( v.getContext(), "Unknown button", Toast.LENGTH_SHORT );
             t.show();

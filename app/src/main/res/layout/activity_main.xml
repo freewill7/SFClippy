@@ -1,89 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.example.will.sfclippy.MainActivity">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical">
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Player 1 Win"
-        android:id="@+id/btnWinP1"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true" />
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbarMain"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Player 2 Win"
-        android:id="@+id/btnWinP2"
-        android:layout_alignBottom="@+id/btnWinP1"
-        android:layout_alignParentEnd="true" />
+    <android.support.v4.widget.DrawerLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/mainDrawerLayout">
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Player 1 Choice"
-        android:id="@+id/btnChoiceP1"
-        android:layout_below="@+id/textP1"
-        android:layout_alignEnd="@+id/btnWinP2"
-        android:layout_alignParentStart="true" />
+        <!-- main content -->
+        <include layout="@layout/layout_main_content"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Player 2 Choice"
-        android:id="@+id/btnChoiceP2"
-        android:layout_below="@+id/textP2"
-        android:layout_alignParentStart="true"
-        android:layout_alignEnd="@+id/btnChoiceP1" />
+        <!-- navigation drawer -->
+        <include layout="@layout/layout_main_drawer"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="Ruaidhri Choice:"
-        android:id="@+id/textP1"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="Will Choice:"
-        android:id="@+id/textP2"
-        android:layout_below="@+id/btnChoiceP1"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="98dp" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="View Results"
-        android:id="@+id/btnResults"
-        android:layout_above="@+id/btnWinP1"
-        android:layout_centerHorizontal="true" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Player 1 Prefs"
-        android:id="@+id/btnPlayer1Prefs"
-        android:layout_above="@+id/btnResults"
-        android:layout_alignParentStart="true" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Player 2 Prefs"
-        android:id="@+id/btnPlayer2Prefs"
-        android:layout_alignBottom="@+id/btnPlayer1Prefs"
-        android:layout_alignParentEnd="true" />
-
-</RelativeLayout>
+    </android.support.v4.widget.DrawerLayout>
+</LinearLayout>
