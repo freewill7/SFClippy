@@ -31,5 +31,6 @@ dependencies {
     compile('com.google.apis:google-api-services-sheets:v4-rev11-1.22.0') {
         exclude group: 'org.apache.httpcomponents'
     }
-    compile('com.google.code.gson:gson:2.3.1')
+    compile 'com.google.code.gson:gson:2.3.1'
+    compile 'com.android.support:design:24.2.0'
 }

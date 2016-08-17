@@ -5,6 +5,7 @@ import android.app.ActivityOptions;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -30,6 +31,9 @@ implements View.OnClickListener {
     private Button p2Button;
     private Button p1Win;
     private Button p2Win;
+    private DrawerLayout drawerLayout;
+    private Snackbar p1Snackbar;
+    private Snackbar p2Snackbar;
 
     static public final int GET_P1_CHARACTER = 1;
     static public final int GET_P2_CHARACTER = 2;
@@ -104,7 +108,7 @@ implements View.OnClickListener {
         Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
         setSupportActionBar(myToolbar);
 
-        DrawerLayout drawerLayout = (DrawerLayout) findViewById( R.id.mainDrawerLayout );
+        drawerLayout = (DrawerLayout) findViewById( R.id.mainDrawerLayout );
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle( this, drawerLayout,
                 myToolbar, R.string.drawer_open, R.string.drawer_close );
@@ -129,6 +133,13 @@ implements View.OnClickListener {
         p2Win = (Button) findViewById(R.id.btnWinP2);
         p2Win.setOnClickListener( this );
 
+        p1Snackbar = Snackbar.make( drawerLayout,
+                "Recorded win for " + dataProvider.getPlayer1Name(),
+                Snackbar.LENGTH_LONG );
+        p2Snackbar = Snackbar.make( drawerLayout,
+                "Recorded win for " + dataProvider.getPlayer2Name(),
+                Snackbar.LENGTH_LONG );
+
         setupDrawer();
     }
 
@@ -136,13 +147,22 @@ implements View.OnClickListener {
         private String p1Choice;
         private String p2Choice;
         private String winnerId;
+        private Snackbar notify;
+        private Button p1WinButton;
+        private Button p2WinButton;
 
         public RecordWinTask( String p1Choice,
                               String p2Choice,
-                              String winnerId ) {
+                              String winnerId,
+                              Button p1WinButton,
+                              Button p2WinButton,
+                              Snackbar notify ) {
             this.p1Choice = p1Choice;
             this.p2Choice = p2Choice;
             this.winnerId = winnerId;
+            this.p1WinButton = p1WinButton;
+            this.p2WinButton = p2WinButton;
+            this.notify = notify;
         }
 
         @Override
@@ -160,15 +180,31 @@ implements View.OnClickListener {
         }
 
         @Override
+        protected  void onPreExecute( ) {
+            p1WinButton.setEnabled(false);
+            p2WinButton.setEnabled(false);
+        }
+
+        @Override
+        protected void onCancelled( Void result ) {
+            p1WinButton.setEnabled(true);
+            p2WinButton.setEnabled(true);
+        }
+
+        @Override
         protected void onPostExecute( Void result ) {
             Log.d( getClass().getName(), "Update complete" );
+            p1WinButton.setEnabled(true);
+            p2WinButton.setEnabled(true);
+            notify.show();
         }
     }
 
-    private void recordWin( String winner ) {
+    private void recordWin( String winnerId, Snackbar notify ) {
         // TODO loading screen
-        Log.d( getLocalClassName(), "Recording win for " + winner );
-        RecordWinTask record = new RecordWinTask( p1Choice, p2Choice, winner );
+        Log.d( getLocalClassName(), "Recording win for " + winnerId );
+        RecordWinTask record = new RecordWinTask( p1Choice, p2Choice, winnerId,
+                p1Win, p2Win, notify );
         record.execute( );
     }
 
@@ -191,9 +227,9 @@ implements View.OnClickListener {
             startActivityForResult(intent, GET_P2_CHARACTER,
                     ActivityOptions.makeSceneTransitionAnimation(this).toBundle() );
         } else if ( p1Win == v ) {
-            recordWin(dataProvider.getPlayer1Id());
+            recordWin(dataProvider.getPlayer1Id(), p1Snackbar);
         } else if ( p2Win == v ) {
-            recordWin(dataProvider.getPlayer2Id());
+            recordWin(dataProvider.getPlayer2Id(), p2Snackbar);
         } else {
             Toast t = Toast.makeText( v.getContext(), "Unknown button", Toast.LENGTH_SHORT );
             t.show();

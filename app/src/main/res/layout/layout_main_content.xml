@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:text="Player 1 Win"
         android:id="@+id/btnWinP1"
-        android:layout_alignParentBottom="true"
+        android:layout_above="@+id/space2"
         android:layout_alignParentStart="true" />
 
     <Button
@@ -61,5 +61,12 @@
         android:layout_below="@+id/btnChoiceP1"
         android:layout_alignParentStart="true"
         android:layout_marginTop="98dp" />
+
+    <Space
+        android:layout_width="20px"
+        android:layout_height="48dp"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:id="@+id/space2" />
 
 </RelativeLayout>
