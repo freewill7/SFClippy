@@ -1,20 +1,23 @@
 package com.example.will.sfclippy;
 
 import android.app.Activity;
-import android.content.Intent;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.style.DynamicDrawableSpan;
+import android.text.style.ImageSpan;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import com.google.android.gms.common.api.Result;
-
-import org.w3c.dom.Text;
 
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -30,32 +33,39 @@ public class ResultsActivity extends Activity {
         private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         private String p1Id;
         private String p2Id;
+        private Drawable winImg;
 
         /**
          * Elements of the view.
          */
         public static class ViewHolder extends RecyclerView.ViewHolder {
-            public TextView mTextView;
+            public TextView dateView;
+            public TextView p1Player;
+            public TextView p2Player;
 
-            public ViewHolder( TextView textView ) {
-                super(textView);
-                mTextView = textView;
+            public ViewHolder( View container ) {
+                super(container);
+                dateView = (TextView) container.findViewById( R.id.textResultDate );
+                p1Player = (TextView) container.findViewById( R.id.textResultP1 );
+                p2Player = (TextView) container.findViewById( R.id.textResultP2 );
             }
         }
 
         public ResultsAdapter( List<DataProvider.BattleResult> results,
                                String p1Id,
-                               String p2Id ) {
+                               String p2Id,
+                               Drawable winImg ) {
             this.results = results;
             this.p1Id = p1Id;
             this.p2Id = p2Id;
+            this.winImg = winImg;
         }
 
         @Override
         public ResultsAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
-            TextView textView = (TextView) LayoutInflater.from( parent.getContext() )
-                    .inflate( R.layout.text_result, parent, false );
-            ViewHolder vh = new ViewHolder( textView );
+            LinearLayout entry = (LinearLayout) LayoutInflater.from( parent.getContext() )
+                    .inflate( R.layout.layout_result, parent, false );
+            ViewHolder vh = new ViewHolder( entry );
             return vh;
         }
 
@@ -68,22 +78,28 @@ public class ResultsActivity extends Activity {
         public void onBindViewHolder( ViewHolder holder, int position ) {
             DataProvider.BattleResult result = results.get(position);
 
-            String p1String = result.characterFor( p1Id );
+            StyleSpan boldSpan = new StyleSpan(Typeface.BOLD );
+
+            CharSequence p1String = result.characterFor( p1Id );
             if ( result.winner( p1Id) ) {
-                p1String = p1String + " (winner)";
+                SpannableStringBuilder str = new SpannableStringBuilder( p1String );
+                str.setSpan( boldSpan, 0, p1String.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE );
+                /* str.setSpan( new ImageSpan( winImg, "src", DynamicDrawableSpan.ALIGN_BOTTOM ),
+                        0, 1,
+                        Spannable.SPAN_INCLUSIVE_INCLUSIVE ); */
+                p1String = str;
             }
 
-            String p2String = result.characterFor( p2Id );
+            CharSequence p2String = result.characterFor( p2Id );
             if ( result.winner( p2Id) ) {
-                p2String = p2String + " (winner)";
+                SpannableString str = new SpannableString(p2String);
+                str.setSpan( boldSpan, 0, p2String.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE );
+                p2String = str;
             }
 
-            String label = dateFormat.format( result.getDate() )
-                    + " "
-                    + p1String
-                    + " vs "
-                    + p2String;
-            holder.mTextView.setText(label);;
+            holder.dateView.setText( dateFormat.format( result.getDate()) );
+            holder.p1Player.setText( p1String );
+            holder.p2Player.setText( p2String );
         }
     }
 
@@ -103,6 +119,12 @@ public class ResultsActivity extends Activity {
         String player1Id = provider.getPlayer1Id();
         String player2Id = provider.getPlayer2Id();
 
+        TextView p1Label = (TextView) findViewById(R.id.textResultLabelP1);
+        p1Label.setText( provider.getPlayer1Name() );
+
+        TextView p2Label = (TextView) findViewById(R.id.textResultLabelP2);
+        p2Label.setText( provider.getPlayer2Name() );
+
         // fetch results to display
         List<DataProvider.BattleResult> results = AppSingleton.getInstance().getDataProvider()
                 .getCurrentPlayerResults();
@@ -114,9 +136,13 @@ public class ResultsActivity extends Activity {
             }
         });
 
+        Drawable winImg = getResources().getDrawable(R.drawable.ic_star_border_black_24dp,
+                getTheme() );
+        winImg.setBounds(0, 0, winImg.getIntrinsicWidth(), winImg.getIntrinsicHeight() );
+
         // create adapter
         Log.d( getLocalClassName(), "Creating adapter for " + results.size());
-        RecyclerView.Adapter mAdapter = new ResultsAdapter( results, player1Id, player2Id );
+        RecyclerView.Adapter mAdapter = new ResultsAdapter( results, player1Id, player2Id, winImg );
         listView.setAdapter(mAdapter);
     }
 }
