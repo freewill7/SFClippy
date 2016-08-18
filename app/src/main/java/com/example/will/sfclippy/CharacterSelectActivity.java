@@ -4,8 +4,10 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,7 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-public class CharacterSelectActivity extends Activity {
+public class CharacterSelectActivity extends AppCompatActivity {
     static public final String GET_CHARACTER_PROPERTY = "choice";
     static public final String PLAYER_ID = "player_id";
 
@@ -126,6 +128,10 @@ public class CharacterSelectActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_character_select);
+
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
+        setSupportActionBar(myToolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         Intent intent = getIntent();
         String playerId = intent.getStringExtra( PLAYER_ID );

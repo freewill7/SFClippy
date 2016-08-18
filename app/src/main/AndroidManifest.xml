@@ -27,7 +27,8 @@
         </activity>
         <activity android:name=".AccountActivity" />
         <activity android:name=".MainActivity" />
-        <activity android:name=".CharacterSelectActivity" />
+        <activity android:name=".CharacterSelectActivity"
+            android:parentActivityName=".MainActivity"/>
         <activity android:name=".ResultsActivity"
             android:parentActivityName=".MainActivity"/>
         <activity android:name=".CharacterPreferenceActivity"></activity>
