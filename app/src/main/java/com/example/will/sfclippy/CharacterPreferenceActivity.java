@@ -6,10 +6,14 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.Icon;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -26,8 +30,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class CharacterPreferenceActivity extends Activity
-implements View.OnClickListener {
+public class CharacterPreferenceActivity extends AppCompatActivity {
     public static final String PLAYER_ID_PROPERTY = "player_id";
     private List<DataProvider.CharacterPreference> characterPreferences;
     private Button btnSave;
@@ -119,14 +122,21 @@ implements View.OnClickListener {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_character_preference, menu);
+        return true;
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_character_preference);
 
-        dataProvider = AppSingleton.getInstance().getDataProvider();
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
+        setSupportActionBar(myToolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        btnSave = (Button) findViewById(R.id.btnSaveCharacters);
-        btnSave.setOnClickListener(this);
+        dataProvider = AppSingleton.getInstance().getDataProvider();
 
         Intent intent = getIntent();
         playerId = intent.getStringExtra( PLAYER_ID_PROPERTY );
@@ -200,13 +210,19 @@ implements View.OnClickListener {
     }
 
     @Override
-    public void onClick( View v ) {
-        if ( btnSave == v ) {
-            UpdatePreferences update = new UpdatePreferences( dataProvider,
-                    playerId,
-                    characterPreferences,
-                    this );
-            update.execute();
+    public boolean onOptionsItemSelected( MenuItem item ) {
+        switch ( item.getItemId() ) {
+            case R.id.action_accept:
+                UpdatePreferences update = new UpdatePreferences( dataProvider,
+                        playerId,
+                        characterPreferences,
+                        this );
+                update.execute();
+
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+
         }
     }
 
