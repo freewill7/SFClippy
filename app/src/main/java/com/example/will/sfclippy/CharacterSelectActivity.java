@@ -10,6 +10,8 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -28,11 +30,14 @@ import java.util.Random;
 public class CharacterSelectActivity extends AppCompatActivity {
     static public final String GET_CHARACTER_PROPERTY = "choice";
     static public final String PLAYER_ID = "player_id";
+    private RandomSelector selector;
+    private RecyclerView listView;
+    private MyAdapter mAdapter;
 
     public static class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         private DataProvider.CharacterPreference[] mDataset;
         private Activity mActivity;
-        private DataProvider.CharacterPreference mRandomChar;
+        private int defaultItemId;
 
         public static class ViewHolder extends RecyclerView.ViewHolder {
             public Activity mActivity;
@@ -61,11 +66,10 @@ public class CharacterSelectActivity extends AppCompatActivity {
         }
 
         public MyAdapter( Activity activity,
-                          DataProvider.CharacterPreference[] myDataset,
-                          DataProvider.CharacterPreference randomChar ) {
+                          DataProvider.CharacterPreference[] myDataset ) {
             mActivity = activity;
             mDataset = myDataset;
-            mRandomChar = randomChar;
+            defaultItemId = -1;
         }
 
         @Override
@@ -78,50 +82,74 @@ public class CharacterSelectActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder( ViewHolder holder, int position ) {
-
-            if ( 0 == position ) {
-                holder.mButton.setText("RANDOM (" + mRandomChar.getCharacterName() + ")");
-                // TODO change to tint
-                holder.mButton.setBackgroundColor(
-                        mActivity.getResources().getColor( R.color.colorAccent ) );
-                holder.mCharacter = mRandomChar;
+            DataProvider.CharacterPreference pref = mDataset[position];
+            holder.mButton.setText(pref.getCharacterName() + "(" + pref.getScore() + ")");
+            holder.mCharacter = pref;
+            if ( defaultItemId == position ) {
+                holder.mButton.setBackgroundColor(Color.RED);
             } else {
-                DataProvider.CharacterPreference pref = mDataset[position-1];
-                holder.mButton.setText(pref.getCharacterName() + "(" + pref.getScore() + ")");
-                // TODO change to tint
-                holder.mButton.setBackgroundColor(
-                        mActivity.getResources().getColor( R.color.colorPrimary ) );
-                holder.mCharacter = pref;
+                holder.mButton.setBackgroundColor( Color.TRANSPARENT );
             }
         }
 
         @Override
         public int getItemCount() {
-            return mDataset.length + 1;
+            return mDataset.length;
+        }
+
+        /**
+         * Set the default id item id.
+         */
+        public void setDefaultItemId( int idx ) {
+            defaultItemId = idx;
+            notifyDataSetChanged();
         }
     }
 
-    private DataProvider.CharacterPreference randomCharacter(
-            List<DataProvider.CharacterPreference> chars ) {
-        int total = 0;
-        for ( DataProvider.CharacterPreference character : chars ) {
-            total += character.getScore();
+    private static class RandomSelector {
+        List<DataProvider.CharacterPreference> chars;
+        private Random randomGenerator;
+
+        public RandomSelector( List<DataProvider.CharacterPreference> chars ) {
+            this.chars = chars;
+            this.randomGenerator = new Random( Calendar.getInstance().getTimeInMillis() );
         }
 
-        Random rand = new Random(Calendar.getInstance().getTimeInMillis());
-        int choice = rand.nextInt() % total;
-
-        int tally = 0;
-        DataProvider.CharacterPreference ret = chars.get(0);
-        for ( DataProvider.CharacterPreference character : chars ) {
-            ret = character;
-            tally += ret.getScore();
-            if ( tally > choice ) {
-                break;
+        public int randomCharacter( ) {
+            int total = 0;
+            for ( DataProvider.CharacterPreference character : chars ) {
+                total += character.getScore();
             }
-        }
+            Log.d( this.getClass().getName(), "Total is " + total);
 
-        return ret;
+            // hack to get round lack of randomness
+            int choice = randomGenerator.nextInt(total);
+            
+            Log.d( this.getClass().getName(), "Score to match " + choice);
+            Log.d( this.getClass().getName(), "Iterating through " + chars.size() );
+
+            int tally = 0;
+            int idx = -1;
+            for ( DataProvider.CharacterPreference character : chars ) {
+                idx++;
+
+                tally += character.getScore();
+                if ( tally > choice ) {
+                    Log.d( getClass().getName(),
+                            "Moving to " + idx + " (" + character.getCharacterName() + ")");
+                    break;
+                }
+            }
+
+            return idx;
+        }
+    }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_character_select, menu);
+        return true;
     }
 
     @Override
@@ -140,7 +168,6 @@ public class CharacterSelectActivity extends AppCompatActivity {
                 AppSingleton.getInstance().getDataProvider().getCharacterPreferences( playerId );
 
         List<DataProvider.CharacterPreference> choices = new ArrayList<>( preferences );
-        DataProvider.CharacterPreference randomChar = randomCharacter( choices );
 
         Collections.sort(choices, new Comparator<DataProvider.CharacterPreference>() {
             @Override
@@ -157,18 +184,36 @@ public class CharacterSelectActivity extends AppCompatActivity {
             }
         });
 
-        final RecyclerView listView = (RecyclerView) findViewById( R.id.characterList );
-        listView.setHasFixedSize(true);
+        selector = new RandomSelector( choices );
+
+        this.listView = (RecyclerView) findViewById( R.id.characterList );
+        this.listView.setHasFixedSize(true);
 
         // use linear layout manager
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
-        listView.setLayoutManager(layoutManager);
+        this.listView.setLayoutManager(layoutManager);
 
         // specify an adapter
         DataProvider.CharacterPreference[] arr = choices.toArray(
                 new DataProvider.CharacterPreference[choices.size()]);
-        RecyclerView.Adapter mAdapter = new MyAdapter( this, arr, randomChar );
-        listView.setAdapter(mAdapter);
+        mAdapter = new MyAdapter( this, arr );
+        this.listView.setAdapter(mAdapter);
 
+    }
+
+    @Override
+    public boolean onOptionsItemSelected( MenuItem item ) {
+        switch ( item.getItemId() ) {
+            case R.id.action_lucky:
+
+                int idx = selector.randomCharacter();
+                mAdapter.setDefaultItemId(idx);
+                this.listView.scrollToPosition(idx);
+
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+
+        }
     }
 }

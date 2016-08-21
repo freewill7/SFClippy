@@ -8,7 +8,7 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
-    <style name="charButton" parent="Widget.AppCompat.Button.Colored">
+    <style name="charButton" parent="Widget.AppCompat.Button">
         <item name="android:layout_width">fill_parent</item>
     </style>
 
