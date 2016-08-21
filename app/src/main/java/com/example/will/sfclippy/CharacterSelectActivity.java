@@ -124,7 +124,7 @@ public class CharacterSelectActivity extends AppCompatActivity {
 
             // hack to get round lack of randomness
             int choice = randomGenerator.nextInt(total);
-            
+
             Log.d( this.getClass().getName(), "Score to match " + choice);
             Log.d( this.getClass().getName(), "Iterating through " + chars.size() );
 

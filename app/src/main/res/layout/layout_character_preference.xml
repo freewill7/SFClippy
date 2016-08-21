@@ -24,7 +24,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/btnPrefModify"
-        android:src="@drawable/ic_thumbs_up_down_black_24dp"
+        android:src="@drawable/ic_star_half_24dp"
         android:background="?android:selectableItemBackground"
         android:layout_gravity="center_vertical"
         android:layout_alignBottom="@+id/textPrefText"

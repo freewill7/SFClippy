@@ -131,10 +131,6 @@ public class ResultsActivity extends AppCompatActivity {
             }
         });
 
-        Drawable winImg = getResources().getDrawable(R.drawable.ic_star_border_black_24dp,
-                getTheme() );
-        winImg.setBounds(0, 0, winImg.getIntrinsicWidth(), winImg.getIntrinsicHeight() );
-
         TextDrawable p1Img = TextDrawable.builder()
                 .buildRound( provider.getPlayer1Name().substring(0, 1), Color.RED );
         TextDrawable p2Img = TextDrawable.builder()

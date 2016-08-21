@@ -169,9 +169,9 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
             }
         });
 
-        IconUpdater updater = new IconUpdater( getDrawable(R.drawable.ic_thumb_up_black_24dp),
-                getDrawable(R.drawable.ic_thumbs_up_down_black_24dp),
-                getDrawable(R.drawable.ic_thumb_down_black_24dp) );
+        IconUpdater updater = new IconUpdater( getDrawable(R.drawable.ic_star_golden_24dp),
+                getDrawable(R.drawable.ic_star_half_24dp),
+                getDrawable(R.drawable.ic_star_empty_24dp1) );
 
         // specify an adapter
         Log.d( getLocalClassName(), "Creating adapter for " + characterPreferences.size());
