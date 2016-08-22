@@ -140,8 +140,6 @@ public class DataProvider {
         public PlayerInfo( String playerId, String playerName ) {
             this.playerId = playerId;
             this.playerName = playerName;
-
-            Log.d( getClass().getName(), "PlayerInfo (" + playerId + "," + playerName + ")");
         }
 
         public String getPlayerId( ) {
@@ -248,6 +246,10 @@ public class DataProvider {
     public List<BattleResult> getCurrentPlayerResults( ) {
         // TODO filter by current players
         return battleResults;
+    }
+
+    public HistoricalTrends getHistoricalTrends( ) {
+        return new HistoricalTrends( battleResults );
     }
 
     public void replaceCharacterPreferences( String playerId,

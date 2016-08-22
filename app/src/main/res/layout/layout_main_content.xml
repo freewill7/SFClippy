@@ -68,4 +68,12 @@
         android:layout_alignParentBottom="true"
         android:id="@+id/space2" />
 
+    <include
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        layout="@layout/layout_fact_switcher"
+        android:layout_centerInParent="true"
+        android:layout_centerVertical="true"
+        android:id="@+id/viewFactWidget"/>
+
 </RelativeLayout>

@@ -13,11 +13,17 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.TextSwitcher;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ViewSwitcher;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity
 implements View.OnClickListener {
@@ -34,6 +40,7 @@ implements View.OnClickListener {
     private DrawerLayout drawerLayout;
     private Snackbar p1Snackbar;
     private Snackbar p2Snackbar;
+    private FactsListener factsListener;
 
     static public final int GET_P1_CHARACTER = 1;
     static public final int GET_P2_CHARACTER = 2;
@@ -76,6 +83,74 @@ implements View.OnClickListener {
         }
     };
 
+    private static class FactsListener implements View.OnClickListener {
+        private int currentIndex = 0;
+        private TextSwitcher switcher;
+        private List<HistoricalTrends.Fact> facts;
+        private ImageButton previous;
+        private ImageButton next;
+
+        public FactsListener(List<HistoricalTrends.Fact> facts,
+                             TextSwitcher switcher,
+                             ImageButton previous,
+                             ImageButton next ) {
+            this.currentIndex = 0;
+            this.switcher = switcher;
+            this.facts = facts;
+            this.previous = previous;
+            this.next = next;
+
+            updateButtons();
+            updateTextSwitcher();
+        }
+
+        private void updateButtons( ) {
+            if ( 0 == currentIndex ) {
+                previous.setEnabled(false);
+                previous.setClickable(false);
+            } else {
+                previous.setEnabled(true);
+                previous.setClickable(true);
+            }
+
+            if ( currentIndex + 1 < facts.size() ) {
+                next.setEnabled(true);
+                next.setClickable(true);
+            } else {
+                next.setEnabled(false);
+                next.setClickable(false);
+            }
+        }
+
+        private void updateTextSwitcher( ) {
+            if ( currentIndex < facts.size() ) {
+                switcher.setText(facts.get(currentIndex).getInfo());
+            } else {
+                switcher.setText("No facts");
+            }
+        }
+
+        private void replaceFacts( List<HistoricalTrends.Fact> facts ) {
+            this.facts = facts;
+            this.currentIndex = 0;
+            updateButtons();
+            updateTextSwitcher();
+        }
+
+        @Override
+        public void onClick( View v ) {
+            if ( v == previous ) {
+                currentIndex--;
+                updateButtons();
+                updateTextSwitcher();
+            } else if ( v == next ) {
+                currentIndex++;
+                updateButtons();
+                updateTextSwitcher();
+            }
+        }
+    }
+
     private String labelPreferences( String playerName ) {
         return playerName + " prefs";
     }
@@ -93,6 +168,50 @@ implements View.OnClickListener {
         btnP1Preferences.setOnClickListener( listener );
         btnP2Preferences.setOnClickListener( listener );
         btnResults.setOnClickListener( listener );
+    }
+
+    private List<HistoricalTrends.Fact> getBattleFacts( ) {
+        List<HistoricalTrends.Fact> facts = dataProvider.getHistoricalTrends().getBattleFacts(
+                dataProvider.getPlayerById( dataProvider.getPlayer1Id() ),
+                p1Choice,
+                dataProvider.getPlayerById( dataProvider.getPlayer2Id() ),
+                p2Choice,
+                Calendar.getInstance().getTime() );
+
+        // sort facts to more interesting facts appear first
+        Collections.sort(facts, new Comparator<HistoricalTrends.Fact>() {
+            @Override
+            public int compare(HistoricalTrends.Fact lhs, HistoricalTrends.Fact rhs) {
+                return rhs.getScore() - lhs.getScore();
+            }
+        });
+
+        return facts;
+    }
+
+    private void setupTextSwitcher( ) {
+        View factsWidget = findViewById(R.id.viewFactWidget);
+        ImageButton next = (ImageButton) factsWidget.findViewById(R.id.btnFactNext);
+        ImageButton previous = (ImageButton) factsWidget.findViewById(R.id.btnFactPrevious);
+        TextSwitcher switcher = (TextSwitcher) factsWidget.findViewById(R.id.textSwitcher);
+
+        switcher.setFactory(new ViewSwitcher.ViewFactory() {
+            public View makeView() {
+                // TODO Auto-generated method stub
+                // create new textView and set the properties like clolr, size etc
+                TextView myText = new TextView(MainActivity.this);
+                //myText.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+                //myText.setTextSize(36);
+                //myText.setTextColor(Color.BLUE);
+                return myText;
+            }
+        });
+
+        List<HistoricalTrends.Fact> facts = getBattleFacts();
+
+        factsListener = new FactsListener( facts, switcher, previous, next );
+        next.setOnClickListener(factsListener);
+        previous.setOnClickListener(factsListener);
     }
 
     @Override
@@ -115,6 +234,7 @@ implements View.OnClickListener {
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
+        setupTextSwitcher();
 
         p1Text = (TextView) findViewById(R.id.textP1);
         p1Text.setText( dataProvider.getPlayer1Name() + " choice:");
@@ -242,11 +362,17 @@ implements View.OnClickListener {
             if ( null != data ) {
                 p1Choice = data.getStringExtra( CharacterSelectActivity.GET_CHARACTER_PROPERTY );
                 p1Button.setText( p1Choice );
+
+                List<HistoricalTrends.Fact> facts = getBattleFacts();
+                factsListener.replaceFacts(facts);
             }
         } else if ( requestCode == GET_P2_CHARACTER ) {
             if ( null != data ) {
                 p2Choice = data.getStringExtra( CharacterSelectActivity.GET_CHARACTER_PROPERTY );
                 p2Button.setText( p2Choice );
+
+                List<HistoricalTrends.Fact> facts = getBattleFacts();
+                factsListener.replaceFacts(facts);
             }
         } else {
             Toast t = Toast.makeText( this.getApplicationContext(),

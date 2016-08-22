@@ -4,4 +4,6 @@
     <string name="drawer_close">Close Drawer</string>
     <string name="action_accept">Accept</string>
     <string name="action_lucky">Random Choice</string>
+    <string name="action_previous">Previous</string>
+    <string name="action_next">Next</string>
 </resources>
