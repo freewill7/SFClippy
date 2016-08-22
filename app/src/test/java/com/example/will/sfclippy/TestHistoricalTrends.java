@@ -36,7 +36,7 @@ public class TestHistoricalTrends {
         trends.addWinRatioFact(p1Info, facts);
 
         TestCase.assertEquals( 1, facts.size() );
-        TestCase.assertEquals( "Will has an overall win ratio of 75%", facts.get(0).getInfo() );
+        TestCase.assertEquals( "Will has an overall win ratio of 75% (4 battles)", facts.get(0).getInfo() );
         TestCase.assertEquals( 1, facts.get(0).getScore() );
     }
 

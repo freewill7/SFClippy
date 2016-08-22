@@ -38,25 +38,24 @@ public class HistoricalTrends {
         this.pastResults = pastResults;
     }
 
-    private float calculateWinRatio( String player1Id ) {
+    protected void addWinRatioFact(DataProvider.PlayerInfo p1Info,
+                                   List<Fact> facts ) {
         int p1Count = 0;
         int p2Count = 0;
         for ( DataProvider.BattleResult result : pastResults ) {
-            if ( 0 == result.getWinnerId().compareTo(player1Id) ) {
+            if ( 0 == result.getWinnerId().compareTo(p1Info.getPlayerId()) ) {
                 p1Count++;
             } else {
                 p2Count++;
             }
         }
 
-        return (float) p1Count / (float) (p1Count + p2Count);
-    }
+        int total = p1Count + p2Count;
+        int percent = (int) (100 * (float) p1Count / ((float) total));
 
-    protected void addWinRatioFact(DataProvider.PlayerInfo p1Info,
-                                   List<Fact> facts ) {
-        float p1Ratio = calculateWinRatio( p1Info.getPlayerId() );
         String description =
-                p1Info.getPlayerName() + " has an overall win ratio of " + (int) (p1Ratio*100) + "%";
+                p1Info.getPlayerName() + " has an overall win ratio of " + percent + "%"
+                + " (" + total + " battles)";
         facts.add( new Fact(description, GENERAL_FACT_SCORE));
     }
 
