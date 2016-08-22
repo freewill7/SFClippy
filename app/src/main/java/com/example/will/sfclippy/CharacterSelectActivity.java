@@ -157,15 +157,19 @@ public class CharacterSelectActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_character_select);
 
-        Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
-        setSupportActionBar(myToolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
         Intent intent = getIntent();
         String playerId = intent.getStringExtra( PLAYER_ID );
 
+        DataProvider dataProvider = AppSingleton.getInstance().getDataProvider();
+
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
+        setSupportActionBar(myToolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle( dataProvider.getPlayerById(playerId).getPlayerName() +
+                " choice");
+
         List<DataProvider.CharacterPreference> preferences =
-                AppSingleton.getInstance().getDataProvider().getCharacterPreferences( playerId );
+                dataProvider.getCharacterPreferences( playerId );
 
         List<DataProvider.CharacterPreference> choices = new ArrayList<>( preferences );
 

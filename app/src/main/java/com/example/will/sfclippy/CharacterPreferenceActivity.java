@@ -132,14 +132,16 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_character_preference);
 
-        Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
-        setSupportActionBar(myToolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
         dataProvider = AppSingleton.getInstance().getDataProvider();
 
         Intent intent = getIntent();
         playerId = intent.getStringExtra( PLAYER_ID_PROPERTY );
+
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
+        setSupportActionBar(myToolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle( dataProvider.getPlayerById(playerId).getPlayerName()
+                + " preferences" );
 
         final RecyclerView listView = (RecyclerView) findViewById( R.id.characterPrefList );
         listView.setHasFixedSize(true);
