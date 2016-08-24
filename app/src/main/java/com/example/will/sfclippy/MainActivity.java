@@ -44,23 +44,27 @@ implements View.OnClickListener {
 
     static public final int GET_P1_CHARACTER = 1;
     static public final int GET_P2_CHARACTER = 2;
+    static public final int DO_BACKUP = 3;
 
     private class MenuListener implements View.OnClickListener {
         private final Activity parent;
         private final Button p1Preferences;
         private final Button p2Preferences;
         private final Button results;
+        private final Button backup;
         private final DataProvider dataProvider;
 
         public MenuListener( Activity parent,
                              Button p1Preferences,
                              Button p2Preferences,
                              Button results,
+                             Button backup,
                              DataProvider dataProvider ) {
             this.parent = parent;
             this.p1Preferences = p1Preferences;
             this.p2Preferences = p2Preferences;
             this.results = results;
+            this.backup = backup;
             this.dataProvider = dataProvider;
         }
 
@@ -79,6 +83,8 @@ implements View.OnClickListener {
             } else if ( results == v ) {
                 Intent intent = new Intent(parent, ResultsActivity.class);
                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
+            } else if ( backup == v ) {
+                dataProvider.backupData( parent, DO_BACKUP );
             }
         }
     };
@@ -161,12 +167,14 @@ implements View.OnClickListener {
         Button btnP2Preferences = (Button) findViewById(R.id.btnPlayer2Prefs);
         btnP2Preferences.setText( labelPreferences(dataProvider.getPlayer2Name()) );
         Button btnResults = (Button) findViewById(R.id.btnResults);
+        Button btnBackup = (Button) findViewById(R.id.btnBackup);
 
         MenuListener listener = new MenuListener( this,
                 btnP1Preferences, btnP2Preferences, btnResults,
-                dataProvider );
+                btnBackup, dataProvider );
         btnP1Preferences.setOnClickListener( listener );
         btnP2Preferences.setOnClickListener( listener );
+        btnBackup.setOnClickListener( listener );
         btnResults.setOnClickListener( listener );
     }
 
@@ -367,13 +375,16 @@ implements View.OnClickListener {
                 factsListener.replaceFacts(facts);
             }
         } else if ( requestCode == GET_P2_CHARACTER ) {
-            if ( null != data ) {
-                p2Choice = data.getStringExtra( CharacterSelectActivity.GET_CHARACTER_PROPERTY );
-                p2Button.setText( p2Choice );
+            if (null != data) {
+                p2Choice = data.getStringExtra(CharacterSelectActivity.GET_CHARACTER_PROPERTY);
+                p2Button.setText(p2Choice);
 
                 List<HistoricalTrends.Fact> facts = getBattleFacts();
                 factsListener.replaceFacts(facts);
             }
+        } else if ( requestCode == DO_BACKUP ) {
+            Toast toast = Toast.makeText( this, "Backup complete", Toast.LENGTH_SHORT );
+            toast.show();
         } else {
             Toast t = Toast.makeText( this.getApplicationContext(),
                     "Unrecognised Activity result", Toast.LENGTH_SHORT );

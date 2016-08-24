@@ -1,5 +1,6 @@
 package com.example.will.sfclippy;
 
+import android.app.Activity;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -267,5 +268,10 @@ public class DataProvider {
         } catch ( IOException ioe ) {
             Log.e( getClass().getName(), "Problem saving preferences", ioe);
         }
+    }
+
+    public void backupData(Activity activity, int requestId ) {
+        helper.backupData( activity, requestId, currentState,
+                p1Preferences, p2Preferences, battleResults );
     }
 }

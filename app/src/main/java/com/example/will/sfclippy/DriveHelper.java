@@ -1,11 +1,17 @@
 package com.example.will.sfclippy;
 
+import android.app.Activity;
+import android.content.IntentSender;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.drive.CreateFileActivityBuilder;
 import com.google.android.gms.drive.Drive;
 import com.google.android.gms.drive.DriveApi;
+import com.google.android.gms.drive.DriveContents;
 import com.google.android.gms.drive.DriveFile;
 import com.google.android.gms.drive.DriveFolder;
 import com.google.android.gms.drive.Metadata;
@@ -107,13 +113,42 @@ public class DriveHelper {
         }
     }
 
+    /**
+     * Backup everything to a single file.
+     */
+    private static class PojoBackup {
+        private PojoState state;
+        private List<PojoCharacter> p1Characters;
+        private List<PojoCharacter> p2Characters;
+        private List<PojoResult> results;
+
+        public PojoBackup( DataProvider.CurrentState state,
+                           List<DataProvider.CharacterPreference> p1Preferences,
+                           List<DataProvider.CharacterPreference> p2Preferences,
+                           List<DataProvider.BattleResult> results ) {
+            this.state = new PojoState(state);
+            this.p1Characters = new ArrayList<>();
+            for ( DataProvider.CharacterPreference pref1 : p1Preferences ) {
+                this.p1Characters.add( new PojoCharacter(pref1) );
+            }
+            this.p2Characters = new ArrayList<>();
+            for ( DataProvider.CharacterPreference pref2 : p2Preferences ) {
+                this.p2Characters.add( new PojoCharacter(pref2) );
+            }
+            this.results = new ArrayList<>();
+            for ( DataProvider.BattleResult result : results ) {
+                this.results.add( new PojoResult(result));
+            }
+        }
+    }
+
     public static class PojoCharacter {
         public String name;
         public int score;
 
-        public PojoCharacter( String name, int score ) {
-            this.name = name;
-            this.score = score;
+        public PojoCharacter( DataProvider.CharacterPreference pref ) {
+            this.name = pref.getCharacterName();
+            this.score = pref.getScore();
         }
 
         public DataProvider.CharacterPreference toCharacterPreference() {
@@ -254,7 +289,7 @@ public class DriveHelper {
         PojoCharacter[] pojos = new PojoCharacter[characters.size()];
         int idx = 0;
         for ( DataProvider.CharacterPreference pref : characters ) {
-            pojos[idx] = new PojoCharacter( pref.getCharacterName(), pref.getScore() );
+            pojos[idx] = new PojoCharacter( pref );
             idx++;
         }
         storeIntoDrive( getCharsPath(playerId), pojos );
@@ -273,4 +308,46 @@ public class DriveHelper {
         return ret;
     }
 
+    protected void backupData(final Activity activity,
+                              final int requestId,
+                              DataProvider.CurrentState state,
+                              List<DataProvider.CharacterPreference> p1Preferences,
+                              List<DataProvider.CharacterPreference> p2Preferences,
+                              List<DataProvider.BattleResult> results ) {
+
+        PojoBackup backup = new PojoBackup( state, p1Preferences, p2Preferences, results );
+        Gson gson = new GsonBuilder().create();
+        final String str = gson.toJson( backup );
+
+        PendingResult<DriveApi.DriveContentsResult> pending =
+                Drive.DriveApi.newDriveContents(apiClient);
+        pending.setResultCallback(new ResultCallback<DriveApi.DriveContentsResult>() {
+            @Override
+            public void onResult(@NonNull DriveApi.DriveContentsResult result) {
+                DriveContents contents = result.getDriveContents();
+                OutputStream stream = contents.getOutputStream();
+                try {
+                    stream.write(str.getBytes(Charsets.UTF_8));
+                    stream.close();
+
+                    MetadataChangeSet metadata =new MetadataChangeSet.Builder()
+                            .setTitle("sfclippy_backup.json")
+                            .setMimeType("application/json")
+                            .build();
+
+                    IntentSender intentSender = Drive.DriveApi.newCreateFileActivityBuilder()
+                            .setActivityTitle( "Backup data")
+                            .setInitialDriveContents( contents )
+                            .setInitialMetadata(metadata)
+                            .build( apiClient );
+                    activity.startIntentSenderForResult( intentSender,
+                            requestId, null, 0, 0, 0 );
+                } catch ( IOException ioe ) {
+                    Log.e( "DriveHelper", "Failed to write", ioe);
+                } catch ( IntentSender.SendIntentException sie ) {
+                    Log.e( "DriveHelper", "Failed to send", sie );
+                }
+            }
+        });
+    }
 }
