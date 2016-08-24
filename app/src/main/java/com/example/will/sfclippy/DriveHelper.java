@@ -118,15 +118,21 @@ public class DriveHelper {
      */
     private static class PojoBackup {
         private PojoState state;
+        private List<PojoPlayer> players;
         private List<PojoCharacter> p1Characters;
         private List<PojoCharacter> p2Characters;
         private List<PojoResult> results;
 
         public PojoBackup( DataProvider.CurrentState state,
+                           List<DataProvider.PlayerInfo> players,
                            List<DataProvider.CharacterPreference> p1Preferences,
                            List<DataProvider.CharacterPreference> p2Preferences,
                            List<DataProvider.BattleResult> results ) {
             this.state = new PojoState(state);
+            this.players = new ArrayList<>();
+            for (DataProvider.PlayerInfo player : players) {
+                this.players.add( new PojoPlayer(player));
+            }
             this.p1Characters = new ArrayList<>();
             for ( DataProvider.CharacterPreference pref1 : p1Preferences ) {
                 this.p1Characters.add( new PojoCharacter(pref1) );
@@ -311,11 +317,12 @@ public class DriveHelper {
     protected void backupData(final Activity activity,
                               final int requestId,
                               DataProvider.CurrentState state,
+                              List<DataProvider.PlayerInfo> players,
                               List<DataProvider.CharacterPreference> p1Preferences,
                               List<DataProvider.CharacterPreference> p2Preferences,
                               List<DataProvider.BattleResult> results ) {
 
-        PojoBackup backup = new PojoBackup( state, p1Preferences, p2Preferences, results );
+        PojoBackup backup = new PojoBackup( state, players, p1Preferences, p2Preferences, results );
         Gson gson = new GsonBuilder().create();
         final String str = gson.toJson( backup );
 

@@ -271,7 +271,7 @@ public class DataProvider {
     }
 
     public void backupData(Activity activity, int requestId ) {
-        helper.backupData( activity, requestId, currentState,
+        helper.backupData( activity, requestId, currentState, players, 
                 p1Preferences, p2Preferences, battleResults );
     }
 }
