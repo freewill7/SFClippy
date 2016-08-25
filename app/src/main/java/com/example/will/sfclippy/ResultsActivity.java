@@ -148,6 +148,7 @@ implements ResultDialogListener {
         Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
         setSupportActionBar(myToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle("Results");
 
         final RecyclerView listView = (RecyclerView) findViewById( R.id.resultsList );
         listView.setHasFixedSize(true);
