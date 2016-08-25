@@ -7,6 +7,7 @@ import android.app.Fragment;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -20,6 +21,8 @@ import android.text.style.ImageSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -31,6 +34,7 @@ import android.widget.Toast;
 import com.amulyakhare.textdrawable.TextDrawable;
 import com.google.android.gms.vision.text.Text;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Comparator;
@@ -42,6 +46,8 @@ import java.util.List;
 public class ResultsActivity extends AppCompatActivity
 implements ResultDialogListener {
     private ResultsAdapter resultsAdapter;
+    private DataProvider dataProvider;
+    private static final int REQUEST_SAVE_RESULTS = 1001;
 
     public static class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.ViewHolder> {
         private Activity activity;
@@ -157,12 +163,12 @@ implements ResultDialogListener {
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         listView.setLayoutManager(layoutManager);
 
-        DataProvider provider = AppSingleton.getInstance().getDataProvider();
-        String player1Id = provider.getPlayer1Id();
-        String player2Id = provider.getPlayer2Id();
+        dataProvider = AppSingleton.getInstance().getDataProvider();
+        String player1Id = dataProvider.getPlayer1Id();
+        String player2Id = dataProvider.getPlayer2Id();
 
         // fetch results to display
-        List<DataProvider.BattleResult> results = provider.getCurrentPlayerResults();
+        List<DataProvider.BattleResult> results = dataProvider.getCurrentPlayerResults();
         Collections.sort(results, new Comparator<DataProvider.BattleResult>() {
             @Override
             public int compare(DataProvider.BattleResult lhs, DataProvider.BattleResult rhs) {
@@ -172,9 +178,9 @@ implements ResultDialogListener {
         });
 
         TextDrawable p1Img = TextDrawable.builder()
-                .buildRound( provider.getPlayer1Name().substring(0, 1), Color.RED );
+                .buildRound( dataProvider.getPlayer1Name().substring(0, 1), Color.RED );
         TextDrawable p2Img = TextDrawable.builder()
-                .buildRound( provider.getPlayer2Name().substring(0, 1), Color.BLUE );
+                .buildRound( dataProvider.getPlayer2Name().substring(0, 1), Color.BLUE );
 
         // create adapter
         Log.d( getLocalClassName(), "Creating adapter for " + results.size());
@@ -186,5 +192,52 @@ implements ResultDialogListener {
     @Override
     public void removeItem( int itemIndex ) {
         resultsAdapter.removeItem(itemIndex);
+    }
+
+    private static class SaveResults extends AsyncTask<Void,String,Void> {
+        private DataProvider dataProvider;
+        private Activity caller;
+
+        public SaveResults( DataProvider dataProvider,
+                            Activity caller ) {
+            this.dataProvider = dataProvider;
+            this.caller = caller;
+        }
+
+        @Override
+        public Void doInBackground( Void ... params ) {
+            // TODO progress and animation
+            try {
+                dataProvider.saveResults();
+            } catch ( IOException ioe ) {
+                cancel(true);
+            }
+
+            return null;
+        }
+
+        @Override
+        public void onPostExecute( Void result ) {
+            caller.finish();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_results, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected( MenuItem item ) {
+        switch ( item.getItemId() ) {
+            case R.id.action_accept_results:
+                SaveResults results = new SaveResults( dataProvider, this );
+                results.execute();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+
+        }
     }
 }

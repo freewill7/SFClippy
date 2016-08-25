@@ -3,6 +3,7 @@
     <string name="drawer_open">Open Drawer</string>
     <string name="drawer_close">Close Drawer</string>
     <string name="action_accept">Accept</string>
+    <string name="action_accept_results">Accept</string>
     <string name="action_lucky">Random Choice</string>
     <string name="action_previous">Previous</string>
     <string name="action_next">Next</string>

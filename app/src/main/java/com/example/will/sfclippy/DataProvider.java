@@ -274,4 +274,8 @@ public class DataProvider {
         helper.backupData( activity, requestId, currentState, players, 
                 p1Preferences, p2Preferences, battleResults );
     }
+
+    public void saveResults( ) throws IOException {
+        helper.storeResults( battleResults );
+    }
 }
