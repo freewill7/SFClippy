@@ -10,9 +10,12 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textAppearance="@style/Base.TextAppearance.Widget.AppCompat.Toolbar.Subtitle"
         android:text="@string/title_options"
-        android:id="@+id/textView" />
+        android:id="@+id/textView"
+        android:background="@color/colorPrimary"
+        android:textColor="@color/colorHighlight"
+        android:textAlignment="textStart" />
 
     <Button
         android:layout_width="match_parent"
