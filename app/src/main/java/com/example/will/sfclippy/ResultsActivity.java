@@ -1,6 +1,9 @@
 package com.example.will.sfclippy;
 
 import android.app.Activity;
+import android.app.Dialog;
+import android.app.DialogFragment;
+import android.app.Fragment;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
@@ -19,9 +22,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.amulyakhare.textdrawable.TextDrawable;
 import com.google.android.gms.vision.text.Text;
@@ -34,8 +39,12 @@ import java.util.List;
 /**
  * Created by will on 13/08/2016.
  */
-public class ResultsActivity extends AppCompatActivity {
+public class ResultsActivity extends AppCompatActivity
+implements ResultDialogListener {
+    private ResultsAdapter resultsAdapter;
+
     public static class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.ViewHolder> {
+        private Activity activity;
         private List<DataProvider.BattleResult> results;
         private static SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM");
         private String p1Id;
@@ -46,24 +55,44 @@ public class ResultsActivity extends AppCompatActivity {
         /**
          * Elements of the view.
          */
-        public static class ViewHolder extends RecyclerView.ViewHolder {
+        public static class ViewHolder extends RecyclerView.ViewHolder
+        implements View.OnLongClickListener {
+            int entryIndex;
+            private Activity activity;
             public ImageView winnerImg;
             public TextView dateView;
             public TextView resultPairing;
 
-            public ViewHolder( View container ) {
+            public ViewHolder( Activity activity, View container ) {
                 super(container);
+                this.activity = activity;
+                container.setLongClickable(true);
+                container.setOnLongClickListener(this);
                 winnerImg = (ImageView) container.findViewById( R.id.textResultImg );
                 dateView = (TextView) container.findViewById( R.id.textResultDateLabel );
                 resultPairing = (TextView) container.findViewById( R.id.textResultPairing );
             }
+
+            @Override
+            public boolean onLongClick( View view ) {
+                Bundle bundle = new Bundle();
+                bundle.putInt( ResultDialog.ITEM_ID_VAR, entryIndex );
+
+                ResultDialog dialog = new ResultDialog();
+                dialog.setArguments(bundle);
+                dialog.show( activity.getFragmentManager(), "frame name" );
+
+                return true;
+            }
         }
 
-        public ResultsAdapter( List<DataProvider.BattleResult> results,
+        public ResultsAdapter( Activity activity,
+                               List<DataProvider.BattleResult> results,
                                String p1Id,
                                String p2Id,
                                Drawable p1Img,
                                Drawable p2Img ) {
+            this.activity = activity;
             this.results = results;
             this.p1Id = p1Id;
             this.p2Id = p2Id;
@@ -75,7 +104,7 @@ public class ResultsActivity extends AppCompatActivity {
         public ResultsAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
             View entry = LayoutInflater.from( parent.getContext() )
                     .inflate( R.layout.layout_result, parent, false );
-            ViewHolder vh = new ViewHolder( entry );
+            ViewHolder vh = new ViewHolder( activity, entry );
             return vh;
         }
 
@@ -91,6 +120,7 @@ public class ResultsActivity extends AppCompatActivity {
             CharSequence p1String = result.characterFor( p1Id );
             CharSequence p2String = result.characterFor( p2Id );
 
+            holder.entryIndex = position;
             if ( result.winner(p1Id) ) {
                 holder.winnerImg.setImageDrawable( p1Img );
             } else {
@@ -98,6 +128,15 @@ public class ResultsActivity extends AppCompatActivity {
             }
             holder.resultPairing.setText( p1String + " vs " + p2String );
             holder.dateView.setText( dateFormat.format( result.getDate()) );
+        }
+
+        /**
+         * Remove an item from the view and underlying data structure.
+         * @param itemIndex The item index to remove.
+         */
+        public void removeItem( int itemIndex ) {
+            results.remove(itemIndex);
+            notifyItemRemoved(itemIndex);
         }
     }
 
@@ -138,8 +177,13 @@ public class ResultsActivity extends AppCompatActivity {
 
         // create adapter
         Log.d( getLocalClassName(), "Creating adapter for " + results.size());
-        RecyclerView.Adapter mAdapter = new ResultsAdapter( results, player1Id, player2Id,
+        resultsAdapter = new ResultsAdapter( this, results, player1Id, player2Id,
                 p1Img, p2Img );
-        listView.setAdapter(mAdapter);
+        listView.setAdapter(resultsAdapter);
+    }
+
+    @Override
+    public void removeItem( int itemIndex ) {
+        resultsAdapter.removeItem(itemIndex);
     }
 }
