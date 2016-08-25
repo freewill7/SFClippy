@@ -222,6 +222,17 @@ implements View.OnClickListener {
         previous.setOnClickListener(factsListener);
     }
 
+    private void checkButtons( ) {
+        boolean enabled = true;
+        if ( 0 == p1Choice.compareTo("unknown")
+                || 0 == p2Choice.compareTo("unknown") ) {
+            enabled = false;
+        }
+
+        p1Win.setEnabled(enabled);
+        p2Win.setEnabled(enabled);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -261,6 +272,8 @@ implements View.OnClickListener {
 
         p2Win = (Button) findViewById(R.id.btnWinP2);
         p2Win.setOnClickListener( this );
+
+        checkButtons();
 
         p1Snackbar = Snackbar.make( drawerLayout,
                 "Recorded win for " + dataProvider.getPlayer1Name(),
@@ -374,6 +387,7 @@ implements View.OnClickListener {
 
                 List<HistoricalTrends.Fact> facts = getBattleFacts();
                 factsListener.replaceFacts(facts);
+                checkButtons();
             }
         } else if ( requestCode == GET_P2_CHARACTER ) {
             if (null != data) {
@@ -382,6 +396,7 @@ implements View.OnClickListener {
 
                 List<HistoricalTrends.Fact> facts = getBattleFacts();
                 factsListener.replaceFacts(facts);
+                checkButtons();
             }
         } else if ( requestCode == DO_BACKUP ) {
             Toast toast = Toast.makeText( this, "Backup complete", Toast.LENGTH_SHORT );
