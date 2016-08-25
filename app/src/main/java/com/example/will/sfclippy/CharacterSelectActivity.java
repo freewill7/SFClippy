@@ -86,7 +86,7 @@ public class CharacterSelectActivity extends AppCompatActivity {
             holder.mButton.setText(pref.getCharacterName() + "(" + pref.getScore() + ")");
             holder.mCharacter = pref;
             if ( defaultItemId == position ) {
-                holder.mButton.setBackgroundColor(Color.RED);
+                holder.mButton.setBackgroundColor( mActivity.getColor(R.color.colorAccent ) );
             } else {
                 holder.mButton.setBackgroundColor( Color.TRANSPARENT );
             }

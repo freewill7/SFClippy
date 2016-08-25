@@ -234,6 +234,7 @@ implements View.OnClickListener {
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
         setSupportActionBar(myToolbar);
+        getSupportActionBar().setTitle( getString( R.string.app_name) );
 
         drawerLayout = (DrawerLayout) findViewById( R.id.mainDrawerLayout );
 

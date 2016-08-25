@@ -1,11 +1,13 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="@style/Theme.AppCompat.Light.NoActionBar">
+    <style name="AppTheme" parent="@style/Theme.AppCompat.Light.DarkActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
 
     <style name="charButton" parent="Widget.AppCompat.Button">
@@ -14,5 +16,9 @@
 
     <style name="SplashTheme" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@drawable/background_splash</item>
+    </style>
+
+    <style name="smallColouredButton" parent="Base.Widget.AppCompat.Button.Colored">
+        <item name="android:minWidth">44dip</item>
     </style>
 </resources>

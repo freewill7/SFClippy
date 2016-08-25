@@ -21,13 +21,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="Ruaidhri Choice:"
+            android:text="@string/label_p1_choice"
             android:id="@+id/textP1" />
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Player 1 Choice"
+            android:text="@string/action_p1_choose"
             android:id="@+id/btnChoiceP1"
             style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_marginStart="16dp"
@@ -46,13 +46,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="Will Choice:"
+            android:text="@string/label_p2_choice"
             android:id="@+id/textP2" />
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Player 2 Choice"
+            android:text="@string/action_p2_choose"
             android:id="@+id/btnChoiceP2"
             style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_marginStart="16dp"
@@ -70,18 +70,20 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Player 1 Win"
+        android:text="@string/action_p1_win"
         android:layout_above="@id/notificationSpace"
         android:layout_alignParentStart="true"
-        android:id="@+id/btnWinP1" />
+        android:id="@+id/btnWinP1"
+        style="@style/Base.Widget.AppCompat.Button.Colored" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Player 2 Win"
+        android:text="@string/action_p2_win"
         android:layout_above="@id/notificationSpace"
         android:layout_alignParentEnd="true"
-        android:id="@+id/btnWinP2" />
+        android:id="@+id/btnWinP2"
+        style="@style/Widget.AppCompat.Button.Colored" />
 
     <include
         android:layout_width="wrap_content"

@@ -11,31 +11,39 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Options"
+        android:text="@string/title_options"
         android:id="@+id/textView" />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Player 1 Prefs"
-        android:id="@+id/btnPlayer1Prefs"/>
+        android:text="@string/action_p1_preferences"
+        android:id="@+id/btnPlayer1Prefs"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:theme="@android:style/Theme.Material.Light" />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Player 2 Prefs"
-        android:id="@+id/btnPlayer2Prefs" />
+        android:text="@string/action_p2_preferences"
+        android:id="@+id/btnPlayer2Prefs"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:theme="@android:style/Theme.Material.Light" />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="View Results"
-        android:id="@+id/btnResults" />
+        android:text="@string/action_results"
+        android:id="@+id/btnResults"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:theme="@android:style/Theme.Material.Light" />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Backup Data"
-        android:id="@+id/btnBackup" />
+        android:text="@string/action_backup"
+        android:id="@+id/btnBackup"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:theme="@android:style/Theme.Material.Light" />
 
 </LinearLayout>
