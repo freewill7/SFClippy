@@ -2,23 +2,47 @@ package com.example.will.sfclippy;
 
 import android.app.Activity;
 import android.util.Log;
-import android.widget.Toast;
+
+import com.google.firebase.database.DatabaseReference;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by will on 10/08/2016.
  */
 public class DataProvider {
-    private DriveHelper helper;
-    private List<PlayerInfo> players;
-    private List<BattleResult> battleResults;
-    private List<CharacterPreference> p1Preferences;
-    private List<CharacterPreference> p2Preferences;
-    private CurrentState currentState;
+    private DatabaseReference usersRef;
+    private DatabaseReference preferencesRef;
+    private DatabaseReference resultsRef;
+    private static String TAG = "DataProvider";
+
+    public DataProvider(DatabaseReference usersRef,
+                        DatabaseReference preferencesRef,
+                        DatabaseReference resultsRef ) {
+        this.usersRef = usersRef;
+        this.preferencesRef = preferencesRef;
+        this.resultsRef = resultsRef;
+    }
+
+    public DatabaseReference getUsername( String playerId ) {
+        return FirebaseHelper.getUser( usersRef, playerId ).getUsername();
+    }
+
+    public DatabaseReference getPreferences( String playerId ) {
+        return FirebaseHelper.getPreferences( preferencesRef, playerId );
+    }
+
+    private String player1Id;
+    private String player2Id;
+    private String player1Name;
+    private String player2Name;
+    private Map<String,String> players;
+    //private Map<String,PojoResult> results;
+
+
 
     public static class CharacterPreference {
         private String characterName;
@@ -175,107 +199,51 @@ public class DataProvider {
         }
     }
 
-    public DataProvider( DriveHelper helper,
-                         List<PlayerInfo> players,
-                         List<BattleResult> battles,
-                         CurrentState currentState,
-                         List<CharacterPreference> p1Preferences,
-                         List<CharacterPreference> p2Preferences ) {
-        this.helper = helper;
-        this.players = players;
-        this.battleResults = battles;
-        this.currentState = currentState;
-        this.p1Preferences = p1Preferences;
-        this.p2Preferences = p2Preferences;
-    }
-
     PlayerInfo getPlayerById( String id ) {
-        for ( PlayerInfo player : players ) {
-            if ( 0 == player.getPlayerId().compareTo(id) ) {
-                return player;
-            }
-        }
         return null;
     }
 
     public String getPlayer1Id( ) {
-        return currentState.getPlayer1Id();
+        return null;
     }
 
     public String getPlayer2Id( ) {
-        return currentState.getPlayer2Id();
+        return null;
     }
 
     public String getPlayer1Name( ) {
-        String ret = "unknown";
-        PlayerInfo info = getPlayerById( getPlayer1Id() );
-        if ( null != info ) {
-            ret = info.getPlayerName();
-        }
-        return ret;
+        return null;
     }
 
     public String getPlayer2Name( ) {
-        String ret = "unknown";
-        PlayerInfo info = getPlayerById( getPlayer2Id() );
-        if ( null != info ) {
-            ret = info.getPlayerName();
-        }
-        return ret;
+        return null;
     }
 
     public List<CharacterPreference> getCharacterPreferences( String playerId ) {
-        if ( 0 == playerId.compareTo( getPlayer1Id() )) {
-            return p1Preferences;
-        } else if ( 0 == playerId.compareTo( getPlayer2Id() )) {
-            return p2Preferences;
-        } else {
-            Log.e( getClass().getName(), "Unknown player " + playerId );
-            return new ArrayList<>();
-        }
+        return null;
     }
 
     public void recordWin( Date time, String player1Choice, String player2Choice, String winner )
     throws IOException {
-        battleResults.add( new BattleResult(time, getPlayer1Id(), player1Choice,
-                getPlayer2Id(), player2Choice,
-                winner ));
-
-        helper.storeResults( battleResults );
     }
 
     public List<BattleResult> getCurrentPlayerResults( ) {
         // TODO filter by current players
-        return battleResults;
+        return null;
     }
 
     public HistoricalTrends getHistoricalTrends( ) {
-        return new HistoricalTrends( battleResults );
+        //return new HistoricalTrends( battleResults );
+        return null;
     }
 
     public void replaceCharacterPreferences( String playerId,
                                              List<DataProvider.CharacterPreference> prefs ) {
-        try {
-            if ( 0 == getPlayer1Id().compareTo(playerId) ) {
-                this.p1Preferences = prefs;
-                helper.storeCharacters( playerId, prefs );
-            } else if ( 0 == getPlayer2Id().compareTo(playerId) ) {
-                this.p2Preferences = prefs;
-                helper.storeCharacters( playerId, prefs );
-            } else {
-                Log.e( getClass().getName(), "Couldn't find player id " + playerId );
-            }
-        } catch ( IOException ioe ) {
-            Log.e( getClass().getName(), "Problem saving preferences", ioe);
-        }
     }
 
     public void backupData(Activity activity, int requestId ) {
-        helper.backupData( activity, requestId, currentState, players, 
-                p1Preferences, p2Preferences, battleResults );
     }
 
     public void saveResults( ) throws IOException {
-        helper.storeResults( battleResults );
     }
 }

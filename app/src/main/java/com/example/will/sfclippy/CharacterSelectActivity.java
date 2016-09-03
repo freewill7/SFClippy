@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -16,7 +17,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import com.example.will.sfclippy.models.CharacterPreference;
 import com.google.api.client.util.Data;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -30,50 +36,104 @@ import java.util.Random;
 public class CharacterSelectActivity extends AppCompatActivity {
     static public final String GET_CHARACTER_PROPERTY = "choice";
     static public final String PLAYER_ID = "player_id";
-    private RandomSelector selector;
+    static public final String TITLE = "title";
     private RecyclerView listView;
-    private MyAdapter mAdapter;
+    private MySelectAdapter mAdapter;
+    private DatabaseReference mReference;
 
-    public static class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
-        private DataProvider.CharacterPreference[] mDataset;
-        private Activity mActivity;
-        private int defaultItemId;
+    /**
+     * One of the views within the RecyclerView.
+     */
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        public Activity mActivity;
+        public Button mButton;
+        public CharacterPreference mCharacter;
 
-        public static class ViewHolder extends RecyclerView.ViewHolder {
-            public Activity mActivity;
-            public Button mButton;
-            public DataProvider.CharacterPreference mCharacter;
+        public ViewHolder( Activity activity, Button button ) {
+            super(button);
+            mActivity = activity;
+            mButton = button;
 
-            public ViewHolder( Activity activity, Button button ) {
-                super(button);
-                mActivity = activity;
-                mButton = button;
-
-                mButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Intent resultData = new Intent();
-                        resultData.putExtra(GET_CHARACTER_PROPERTY, getCharacter().getCharacterName() );
-                        mActivity.setResult(Activity.RESULT_OK, resultData);
-                        mActivity.finish();
-                    }
-                });
-            }
-
-            private DataProvider.CharacterPreference getCharacter() {
-                return mCharacter;
-            }
+            mButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent resultData = new Intent();
+                    resultData.putExtra(GET_CHARACTER_PROPERTY, getCharacter().name );
+                    mActivity.setResult(Activity.RESULT_OK, resultData);
+                    mActivity.finish();
+                }
+            });
         }
 
-        public MyAdapter( Activity activity,
-                          DataProvider.CharacterPreference[] myDataset ) {
+        private CharacterPreference getCharacter() {
+            return mCharacter;
+        }
+    }
+
+    /**
+     * Order characters by score (highest first).
+     */
+    public static class DescendingScore implements Comparator<CharacterPreference> {
+        public int compare(CharacterPreference lhs, CharacterPreference rhs) {
+            // higher rating goes first
+            int diff = rhs.score - lhs.score;
+            if ( 0 == diff ) {
+                // then order by ascending alphabetical
+                diff = lhs.name.compareTo( rhs.name );
+            }
+
+            return diff;
+        }
+    }
+
+    /**
+     * Adapter between a FirebaseDb and RecyclerView.
+     */
+    public static class MySelectAdapter extends RecyclerView.Adapter<ViewHolder>
+    implements ValueEventListener {
+        private List<CharacterPreference> mDataset = new ArrayList<>();
+        private DatabaseReference mPreferences;
+        private Activity mActivity;
+        private int defaultItemId;
+        private static final String TAG = "MySelectAdapter";
+        private Comparator<CharacterPreference> orderer;
+
+        public MySelectAdapter( Activity activity,
+                                DatabaseReference preferences ) {
             mActivity = activity;
-            mDataset = myDataset;
+            mPreferences = preferences;
             defaultItemId = -1;
+
+            orderer = new DescendingScore();
         }
 
         @Override
-        public MyAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
+        public void onDataChange(DataSnapshot snapshot) {
+            if ( null == snapshot.getValue()) {
+                // bootstrap preferences
+                FirebaseHelper.initialisePreferences(mPreferences);
+            } else {
+                ArrayList<CharacterPreference> preferences = new ArrayList<>();
+                for ( DataSnapshot snap : snapshot.getChildren() ) {
+                    preferences.add( snap.getValue(CharacterPreference.class) );
+                }
+
+                // Sort appropriately
+                Collections.sort( preferences, orderer );
+
+                // Update and notify
+                this.mDataset = preferences;
+                notifyDataSetChanged();
+            }
+        }
+
+        @Override
+        public void onCancelled( DatabaseError dbError ) {
+            Log.e( TAG, "Cancelled adapter", dbError.toException() );
+        }
+
+        @Override
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
             Button btn = (Button) LayoutInflater.from( parent.getContext() )
                     .inflate( R.layout.button_character, parent, false );
             ViewHolder vh = new ViewHolder( mActivity, btn );
@@ -82,8 +142,8 @@ public class CharacterSelectActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder( ViewHolder holder, int position ) {
-            DataProvider.CharacterPreference pref = mDataset[position];
-            holder.mButton.setText(pref.getCharacterName() + "(" + pref.getScore() + ")");
+            CharacterPreference pref = mDataset.get(position);
+            holder.mButton.setText(pref.name + "(" + pref.score + ")");
             holder.mCharacter = pref;
             if ( defaultItemId == position ) {
                 holder.mButton.setBackgroundColor( mActivity.getColor(R.color.colorAccent ) );
@@ -94,57 +154,19 @@ public class CharacterSelectActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            return mDataset.length;
+            return mDataset.size();
         }
 
         /**
-         * Set the default id item id.
+         * Select a random character.
          */
-        public void setDefaultItemId( int idx ) {
-            defaultItemId = idx;
+        public int selectRandom( ) {
+            RandomSelector selector = new RandomSelector( mDataset );
+            defaultItemId = selector.randomCharacter();
             notifyDataSetChanged();
+            return defaultItemId;
         }
     }
-
-    private static class RandomSelector {
-        List<DataProvider.CharacterPreference> chars;
-        private Random randomGenerator;
-
-        public RandomSelector( List<DataProvider.CharacterPreference> chars ) {
-            this.chars = chars;
-            this.randomGenerator = new Random( Calendar.getInstance().getTimeInMillis() );
-        }
-
-        public int randomCharacter( ) {
-            int total = 0;
-            for ( DataProvider.CharacterPreference character : chars ) {
-                total += character.getScore();
-            }
-            Log.d( this.getClass().getName(), "Total is " + total);
-
-            // hack to get round lack of randomness
-            int choice = randomGenerator.nextInt(total);
-
-            Log.d( this.getClass().getName(), "Score to match " + choice);
-            Log.d( this.getClass().getName(), "Iterating through " + chars.size() );
-
-            int tally = 0;
-            int idx = -1;
-            for ( DataProvider.CharacterPreference character : chars ) {
-                idx++;
-
-                tally += character.getScore();
-                if ( tally > choice ) {
-                    Log.d( getClass().getName(),
-                            "Moving to " + idx + " (" + character.getCharacterName() + ")");
-                    break;
-                }
-            }
-
-            return idx;
-        }
-    }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -159,36 +181,18 @@ public class CharacterSelectActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         String playerId = intent.getStringExtra( PLAYER_ID );
+        String title = intent.getStringExtra( TITLE );
 
         DataProvider dataProvider = AppSingleton.getInstance().getDataProvider();
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
         setSupportActionBar(myToolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle( dataProvider.getPlayerById(playerId).getPlayerName() +
-                " choice");
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        getSupportActionBar().setTitle( title );
 
-        List<DataProvider.CharacterPreference> preferences =
-                dataProvider.getCharacterPreferences( playerId );
-
-        List<DataProvider.CharacterPreference> choices = new ArrayList<>( preferences );
-
-        Collections.sort(choices, new Comparator<DataProvider.CharacterPreference>() {
-            @Override
-            public int compare(DataProvider.CharacterPreference lhs,
-                               DataProvider.CharacterPreference rhs) {
-                // higher rating goes first
-                int diff = rhs.getScore() - lhs.getScore();
-                if ( 0 == diff ) {
-                    // then order by ascending alphabetical
-                    diff = lhs.getCharacterName().compareTo( rhs.getCharacterName() );
-                }
-
-                return diff;
-            }
-        });
-
-        selector = new RandomSelector( choices );
+        mReference = dataProvider.getPreferences( playerId );
+        mAdapter = new MySelectAdapter( this, mReference );
+        mReference.addValueEventListener( mAdapter );
 
         this.listView = (RecyclerView) findViewById( R.id.characterList );
         this.listView.setHasFixedSize(true);
@@ -196,13 +200,7 @@ public class CharacterSelectActivity extends AppCompatActivity {
         // use linear layout manager
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         this.listView.setLayoutManager(layoutManager);
-
-        // specify an adapter
-        DataProvider.CharacterPreference[] arr = choices.toArray(
-                new DataProvider.CharacterPreference[choices.size()]);
-        mAdapter = new MyAdapter( this, arr );
         this.listView.setAdapter(mAdapter);
-
     }
 
     @Override
@@ -210,14 +208,22 @@ public class CharacterSelectActivity extends AppCompatActivity {
         switch ( item.getItemId() ) {
             case R.id.action_lucky:
 
-                int idx = selector.randomCharacter();
-                mAdapter.setDefaultItemId(idx);
+                int idx = mAdapter.selectRandom();
                 this.listView.scrollToPosition(idx);
 
+                return true;
+            case android.R.id.home:
+                NavUtils.navigateUpFromSameTask(this);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
 
         }
+    }
+
+    @Override
+    public void onDestroy(  ) {
+        mReference.removeEventListener(mAdapter);
+        super.onDestroy();
     }
 }

@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by will on 13/08/2016.
@@ -14,11 +16,11 @@ import java.util.UUID;
 public class DataProviderSetup extends AsyncTask<Void,String,DataProvider> {
     private DriveHelper helper;
     private NotifyInterface callback;
+    private Exception lastError;
 
     public interface NotifyInterface {
-        void onProgressUpdate( String stage );
-        void onError( Exception e );
-        void onComplete( DataProvider provider );
+        void onDataProviderUpdate( String stage );
+        void onDataProviderSetup( DataProvider provider );
     }
 
     public DataProviderSetup( DriveHelper helper, NotifyInterface callback ) {
@@ -29,7 +31,7 @@ public class DataProviderSetup extends AsyncTask<Void,String,DataProvider> {
     @Override
     public void onProgressUpdate( String... progress ) {
         Log.d( getClass().getName(), progress[0]);
-        callback.onProgressUpdate(progress[0]);
+        callback.onDataProviderUpdate(progress[0]);
     }
 
     private List<DataProvider.CharacterPreference> defaultPreferences( ) {
@@ -80,6 +82,18 @@ public class DataProviderSetup extends AsyncTask<Void,String,DataProvider> {
 
     @Override
     public DataProvider doInBackground( Void... params ) {
+
+        Semaphore semaphore = new Semaphore(1);
+
+        try {
+            semaphore.acquire();
+        } catch ( InterruptedException interrupted ) {
+            lastError = interrupted;
+            cancel(true);
+            return null;
+        }
+
+
 
         publishProgress( "Fetching players..." );
         List<DataProvider.PlayerInfo> playerInfo = helper.fetchPlayers();
@@ -140,11 +154,12 @@ public class DataProviderSetup extends AsyncTask<Void,String,DataProvider> {
                 state.getPlayer2Id(),
                 "P2" );
 
-        return new DataProvider( helper, playerInfo, results, state, p1Chars, p2Chars );
+        //return new DataProvider( helper, playerInfo, results, state, p1Chars, p2Chars );
+        return null;
     }
 
     @Override
     public void onPostExecute( DataProvider provider ) {
-        callback.onComplete( provider );
+        callback.onDataProviderSetup( provider );
     }
 }

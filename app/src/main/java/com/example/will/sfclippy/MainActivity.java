@@ -19,7 +19,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
+
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,24 +33,32 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity
 implements View.OnClickListener {
-    private DataProvider dataProvider;
-
+    private String player1Id;
+    private String player2Id;
     private String p1Choice;
     private String p2Choice;
-    private TextView p1Text;
-    private TextView p2Text;
     private Button p1Button;
     private Button p2Button;
     private Button p1Win;
     private Button p2Win;
-    private DrawerLayout drawerLayout;
     private Snackbar p1Snackbar;
     private Snackbar p2Snackbar;
     private FactsListener factsListener;
+    private NameWatcher p1Watcher;
+    private NameWatcher p2Watcher;
+
+    private DatabaseReference p1User;
+    private DatabaseReference p2User;
+    private DatabaseReference results;
 
     static public final int GET_P1_CHARACTER = 1;
     static public final int GET_P2_CHARACTER = 2;
     static public final int DO_BACKUP = 3;
+
+    public final static String PLAYER1_ID_LABEL = "player1_id";
+    public final static String PLAYER2_ID_LABEL = "player2_id";
+
+    private final static String TAG = "MainActivity";
 
     private class MenuListener implements View.OnClickListener {
         private final Activity parent;
@@ -162,6 +176,7 @@ implements View.OnClickListener {
     }
 
     private void setupDrawer( ) {
+        /*
         Button btnP1Preferences = (Button) findViewById(R.id.btnPlayer1Prefs);
         btnP1Preferences.setText( labelPreferences(dataProvider.getPlayer1Name()) );
         Button btnP2Preferences = (Button) findViewById(R.id.btnPlayer2Prefs);
@@ -175,10 +190,13 @@ implements View.OnClickListener {
         btnP1Preferences.setOnClickListener( listener );
         btnP2Preferences.setOnClickListener( listener );
         btnBackup.setOnClickListener( listener );
-        btnResults.setOnClickListener( listener );
+        btnResults.setOnClickListener( listener ); */
     }
 
     private List<HistoricalTrends.Fact> getBattleFacts( ) {
+        return new ArrayList<>();
+
+        /*
         List<HistoricalTrends.Fact> facts = dataProvider.getHistoricalTrends().getBattleFacts(
                 dataProvider.getPlayerById( dataProvider.getPlayer1Id() ),
                 p1Choice,
@@ -195,6 +213,7 @@ implements View.OnClickListener {
         });
 
         return facts;
+        */
     }
 
     private void setupTextSwitcher( ) {
@@ -233,33 +252,111 @@ implements View.OnClickListener {
         p2Win.setEnabled(enabled);
     }
 
+    /**
+     * Watches a username.
+     */
+    public static class NameWatcher implements ValueEventListener {
+        private TextView playerText;
+        private Button playerWinButton;
+        private Snackbar snackbar;
+
+        public NameWatcher( TextView playerText,
+                            Button playerWinButton,
+                            Snackbar snackbar ) {
+            this.playerText = playerText;
+            this.playerWinButton = playerWinButton;
+            this.snackbar = snackbar;
+        }
+
+        @Override
+        public void onDataChange(DataSnapshot dataSnapshot) {
+            Log.d( "NameWatcher", "Received data change");
+            String name = dataSnapshot.getValue(String.class);
+
+            playerText.setText( name + " choice:" );
+            playerWinButton.setText( name + " win" );
+            snackbar.setText( "Recorded win for " + name );
+        }
+
+        @Override
+        public void onCancelled( DatabaseError databaseError ) {
+            Log.e( TAG, "Database error", databaseError.toException() );
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState( Bundle outState  ) {
+        Log.d( TAG, "Saving state" );
+        super.onSaveInstanceState( outState );
+        outState.putString( PLAYER1_ID_LABEL, player1Id );
+        outState.putString( PLAYER2_ID_LABEL, player2Id );
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        this.dataProvider = AppSingleton.getInstance().getDataProvider();
-
-        p1Choice = "unknown";
-        p2Choice = "unknown";
-
+        // set-up action bar
         Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
         setSupportActionBar(myToolbar);
         getSupportActionBar().setTitle( getString( R.string.app_name) );
 
-        drawerLayout = (DrawerLayout) findViewById( R.id.mainDrawerLayout );
+        DrawerLayout drawerLayout = (DrawerLayout) findViewById( R.id.mainDrawerLayout );
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle( this, drawerLayout,
                 myToolbar, R.string.drawer_open, R.string.drawer_close );
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        setupTextSwitcher();
+        // set-up buttons
+        TextView p1Text = (TextView) findViewById(R.id.textP1);
+        TextView p2Text = (TextView) findViewById(R.id.textP2);
+        p1Win = (Button) findViewById(R.id.btnWinP1);
+        p1Win.setOnClickListener( this );
+        p2Win = (Button) findViewById(R.id.btnWinP2);
+        p2Win.setOnClickListener( this );
 
-        p1Text = (TextView) findViewById(R.id.textP1);
-        p1Text.setText( dataProvider.getPlayer1Name() + " choice:");
-        p2Text = (TextView) findViewById(R.id.textP2);
-        p2Text.setText( dataProvider.getPlayer2Name() + " choice:");
+        // set-up snackbar
+        p1Snackbar = Snackbar.make( drawerLayout,
+                "Recorded win for P1",
+                Snackbar.LENGTH_LONG );
+        p2Snackbar = Snackbar.make( drawerLayout,
+                "Recorded win for P2",
+                Snackbar.LENGTH_LONG );
+
+        p1Watcher = new NameWatcher( p1Text, p1Win, p1Snackbar );
+        p2Watcher = new NameWatcher( p2Text, p2Win, p2Snackbar );
+
+        // get id associated with the battle
+        // first from intent... then from saved instance state
+        Intent intent = getIntent();
+        player1Id = intent.getStringExtra( PLAYER1_ID_LABEL );
+        player2Id = intent.getStringExtra( PLAYER2_ID_LABEL );
+        if ( null == player1Id || null == player2Id ) {
+            if ( null != savedInstanceState ) {
+                Log.d( TAG, "Restoring from saved state");
+                player1Id = savedInstanceState.getString( PLAYER1_ID_LABEL );
+                player2Id = savedInstanceState.getString( PLAYER2_ID_LABEL );
+            }
+        }
+
+        DataProvider dataProvider = AppSingleton.getInstance().getDataProvider();
+        p1User = dataProvider.getUsername( player1Id );
+        Log.d( TAG, "Red panda " + p1User.getParent().getParent().getKey()
+                + "/" + p1User.getParent().getKey()
+                + "/" + p1User.getKey() );
+        p1User.addValueEventListener(p1Watcher);
+        p2User = dataProvider.getUsername( player2Id );
+        Log.d( TAG, "Blue Goose " + p2User.getParent().getParent().getKey()
+                + "/" + p2User.getParent().getKey()
+                + "/" + p2User.getKey() );
+        p2User.addValueEventListener(p2Watcher);
+
+        p1Choice = "unknown";
+        p2Choice = "unknown";
+
+        setupTextSwitcher();
 
         p1Button = (Button) findViewById(R.id.btnChoiceP1);
         p1Button.setOnClickListener( this );
@@ -267,20 +364,7 @@ implements View.OnClickListener {
         p2Button = (Button) findViewById(R.id.btnChoiceP2);
         p2Button.setOnClickListener( this );
 
-        p1Win = (Button) findViewById(R.id.btnWinP1);
-        p1Win.setOnClickListener( this );
-
-        p2Win = (Button) findViewById(R.id.btnWinP2);
-        p2Win.setOnClickListener( this );
-
         checkButtons();
-
-        p1Snackbar = Snackbar.make( drawerLayout,
-                "Recorded win for " + dataProvider.getPlayer1Name(),
-                Snackbar.LENGTH_LONG );
-        p2Snackbar = Snackbar.make( drawerLayout,
-                "Recorded win for " + dataProvider.getPlayer2Name(),
-                Snackbar.LENGTH_LONG );
 
         setupDrawer();
     }
@@ -355,23 +439,23 @@ implements View.OnClickListener {
         if ( p1Button == v ) {
             Intent intent = new Intent(this, CharacterSelectActivity.class);
 
-            String player1Id = dataProvider.getPlayer1Id();
             intent.putExtra( CharacterSelectActivity.PLAYER_ID, player1Id );
+            intent.putExtra( CharacterSelectActivity.TITLE, "Choose player 1");
 
             startActivityForResult(intent, GET_P1_CHARACTER,
                     ActivityOptions.makeSceneTransitionAnimation(this).toBundle() );
         } else if ( p2Button == v ) {
             Intent intent = new Intent(this, CharacterSelectActivity.class);
 
-            String player2Id = dataProvider.getPlayer2Id();
             intent.putExtra( CharacterSelectActivity.PLAYER_ID, player2Id );
+            intent.putExtra( CharacterSelectActivity.TITLE, "Choose player 2");
 
             startActivityForResult(intent, GET_P2_CHARACTER,
                     ActivityOptions.makeSceneTransitionAnimation(this).toBundle() );
         } else if ( p1Win == v ) {
-            recordWin(dataProvider.getPlayer1Id(), p1Snackbar);
+            recordWin(player1Id, p1Snackbar);
         } else if ( p2Win == v ) {
-            recordWin(dataProvider.getPlayer2Id(), p2Snackbar);
+            recordWin(player2Id, p2Snackbar);
         } else {
             Toast t = Toast.makeText( v.getContext(), "Unknown button", Toast.LENGTH_SHORT );
             t.show();
@@ -406,5 +490,12 @@ implements View.OnClickListener {
                     "Unrecognised Activity result", Toast.LENGTH_SHORT );
             t.show();
         }
+    }
+
+    @Override
+    public void onDestroy( ) {
+        p1User.removeEventListener(p1Watcher);
+        p2User.removeEventListener(p2Watcher);
+        super.onDestroy();
     }
 }

@@ -48,16 +48,20 @@ public class DriveHelper {
      * Utility class for encoding/decoding player info.
      */
     protected static class PojoPlayer {
-        public String playerId;
         public String playerName;
 
+        public PojoPlayer( String playerName ) {
+            this.playerName = playerName;
+        }
+
         public PojoPlayer(DataProvider.PlayerInfo player) {
-            this.playerId = player.getPlayerId();
+            //this.playerId = player.getPlayerId();
             this.playerName = player.getPlayerName();
         }
 
         DataProvider.PlayerInfo toPlayerInfo( ) {
-            return new DataProvider.PlayerInfo( playerId, playerName );
+            //return new DataProvider.PlayerInfo( playerId, playerName );
+            return null;
         }
     };
 
