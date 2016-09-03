@@ -19,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
+import com.example.will.sfclippy.models.BattleResult;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -66,39 +67,42 @@ implements View.OnClickListener {
         private final Button p2Preferences;
         private final Button results;
         private final Button backup;
-        private final DataProvider dataProvider;
+        private final String p1Id;
+        private final String p2Id;
 
         public MenuListener( Activity parent,
                              Button p1Preferences,
                              Button p2Preferences,
                              Button results,
                              Button backup,
-                             DataProvider dataProvider ) {
+                             String p1Id,
+                             String p2Id ) {
             this.parent = parent;
             this.p1Preferences = p1Preferences;
             this.p2Preferences = p2Preferences;
             this.results = results;
             this.backup = backup;
-            this.dataProvider = dataProvider;
+            this.p1Id = p1Id;
+            this.p2Id = p2Id;
         }
 
         @Override
         public void onClick( View v ) {
             if ( p1Preferences == v ) {
                 Intent intent = new Intent(parent, CharacterPreferenceActivity.class);
-                intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY,
-                        dataProvider.getPlayer1Id());
+                intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY, p1Id );
                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
             } else if ( p2Preferences == v ) {
                 Intent intent = new Intent(parent, CharacterPreferenceActivity.class);
-                intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY,
-                        dataProvider.getPlayer2Id());
+                intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY, p2Id );
                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
             } else if ( results == v ) {
                 Intent intent = new Intent(parent, ResultsActivity.class);
+                intent.putExtra( ResultsActivity.P1_ID, p1Id );
+                intent.putExtra( ResultsActivity.P2_ID, p2Id );
                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
             } else if ( backup == v ) {
-                dataProvider.backupData( parent, DO_BACKUP );
+                Toast.makeText(parent, "Backup not implemented", Toast.LENGTH_SHORT).show();
             }
         }
     };
@@ -176,21 +180,20 @@ implements View.OnClickListener {
     }
 
     private void setupDrawer( ) {
-        /*
         Button btnP1Preferences = (Button) findViewById(R.id.btnPlayer1Prefs);
-        btnP1Preferences.setText( labelPreferences(dataProvider.getPlayer1Name()) );
+        //btnP1Preferences.setText( labelPreferences(dataProvider.getPlayer1Name()) );
         Button btnP2Preferences = (Button) findViewById(R.id.btnPlayer2Prefs);
-        btnP2Preferences.setText( labelPreferences(dataProvider.getPlayer2Name()) );
-        Button btnResults = (Button) findViewById(R.id.btnResults);
+        //btnP2Preferences.setText( labelPreferences(dataProvider.getPlayer2Name()) );
         Button btnBackup = (Button) findViewById(R.id.btnBackup);
+        Button btnResults = (Button) findViewById(R.id.btnResults);
 
         MenuListener listener = new MenuListener( this,
                 btnP1Preferences, btnP2Preferences, btnResults,
-                btnBackup, dataProvider );
+                btnBackup, player1Id, player2Id );
         btnP1Preferences.setOnClickListener( listener );
         btnP2Preferences.setOnClickListener( listener );
         btnBackup.setOnClickListener( listener );
-        btnResults.setOnClickListener( listener ); */
+        btnResults.setOnClickListener( listener );
     }
 
     private List<HistoricalTrends.Fact> getBattleFacts( ) {
@@ -369,69 +372,33 @@ implements View.OnClickListener {
         setupDrawer();
     }
 
-    private static class RecordWinTask extends AsyncTask<Void,Void,Void> {
-        private String p1Choice;
-        private String p2Choice;
-        private String winnerId;
-        private Snackbar notify;
-        private Button p1WinButton;
-        private Button p2WinButton;
-
-        public RecordWinTask( String p1Choice,
-                              String p2Choice,
-                              String winnerId,
-                              Button p1WinButton,
-                              Button p2WinButton,
-                              Snackbar notify ) {
-            this.p1Choice = p1Choice;
-            this.p2Choice = p2Choice;
-            this.winnerId = winnerId;
-            this.p1WinButton = p1WinButton;
-            this.p2WinButton = p2WinButton;
-            this.notify = notify;
-        }
-
-        @Override
-        protected Void doInBackground( Void... params ) {
-
-            try {
-                AppSingleton.getInstance().getDataProvider().recordWin(
-                        Calendar.getInstance().getTime(), p1Choice, p2Choice, winnerId);
-            } catch ( IOException ioe ) {
-                Log.e( getClass().getName(), "Failed to record win- check sync");
-                cancel(true);
-            }
-
-            return null;
-        }
-
-        @Override
-        protected  void onPreExecute( ) {
-            p1WinButton.setEnabled(false);
-            p2WinButton.setEnabled(false);
-        }
-
-        @Override
-        protected void onCancelled( Void result ) {
-            p1WinButton.setEnabled(true);
-            p2WinButton.setEnabled(true);
-        }
-
-        @Override
-        protected void onPostExecute( Void result ) {
-            Log.d( getClass().getName(), "Update complete" );
-            p1WinButton.setEnabled(true);
-            p2WinButton.setEnabled(true);
-            notify.show();
-        }
-    }
-
-    private void recordWin( String winnerId, Snackbar notify ) {
+    private void recordWin(String winnerId, final Snackbar notify ) {
         // TODO loading screen
         Log.d( getLocalClassName(), "Recording win for " + winnerId );
-        RecordWinTask record = new RecordWinTask( p1Choice, p2Choice, winnerId,
-                p1Win, p2Win, notify );
-        record.execute( );
+
+        BattleResult result = new BattleResult( Calendar.getInstance().getTime(),
+                player1Id,
+                p1Choice,
+                player2Id,
+                p2Choice,
+                winnerId );
+
+        // set loading
+        p1Win.setEnabled(false);
+        p2Win.setEnabled(false);
+
+        DataProvider dataProvider = AppSingleton.getInstance().getDataProvider();
+        DatabaseReference results = dataProvider.getResults();
+        DatabaseReference child = results.push();
+        child.setValue( result, new DatabaseReference.CompletionListener() {
+            @Override
+            public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
+                p1Win.setEnabled(true);
+                p2Win.setEnabled(true);
+
+                notify.show();
+            }
+        });
     }
 
     @Override

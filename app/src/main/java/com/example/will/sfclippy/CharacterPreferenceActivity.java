@@ -153,7 +153,8 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
         DataProvider provider = AppSingleton.getInstance().getDataProvider();
 
         // take a copy of preferences so we can modify
-        List<DataProvider.CharacterPreference> prefs = provider.getCharacterPreferences(playerId);
+        // provider.getCharacterPreferences(playerId);
+        List<DataProvider.CharacterPreference> prefs = new ArrayList<DataProvider.CharacterPreference>();
         characterPreferences = new ArrayList<>();
         for ( DataProvider.CharacterPreference pref : prefs ) {
             characterPreferences.add( new DataProvider.CharacterPreference(pref) );

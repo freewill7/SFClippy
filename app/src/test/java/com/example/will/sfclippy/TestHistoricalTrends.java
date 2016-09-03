@@ -1,5 +1,8 @@
 package com.example.will.sfclippy;
 
+import com.example.will.sfclippy.models.BattleResult;
+import com.example.will.sfclippy.models.PlayerInfo;
+
 import junit.framework.TestCase;
 
 import org.junit.Test;
@@ -14,18 +17,18 @@ import java.util.List;
 public class TestHistoricalTrends {
     @Test
     public void testWinRatio( ) {
-        DataProvider.PlayerInfo p1Info = new DataProvider.PlayerInfo( "WRL", "Will");
+        PlayerInfo p1Info = new PlayerInfo( "WRL", "Will");
 
-        DataProvider.BattleResult r1 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r1.getWinnerId()).thenReturn("WRL");
-        DataProvider.BattleResult r2 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r2.getWinnerId()).thenReturn("RW");
-        DataProvider.BattleResult r3 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r3.getWinnerId()).thenReturn("WRL");
-        DataProvider.BattleResult r4 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r4.getWinnerId()).thenReturn("WRL");
+        BattleResult r1 = new BattleResult();
+        r1.winnerId = "WRL";
+        BattleResult r2 = Mockito.mock(BattleResult.class);
+        r2.winnerId = "RW";
+        BattleResult r3 = Mockito.mock(BattleResult.class);
+        r3.winnerId = "WRL";
+        BattleResult r4 = Mockito.mock(BattleResult.class);
+        r4.winnerId = "WRL";
 
-        ArrayList<DataProvider.BattleResult> results = new ArrayList<>();
+        ArrayList<BattleResult> results = new ArrayList<>();
         results.add(r1);
         results.add(r2);
         results.add(r3);
@@ -42,22 +45,22 @@ public class TestHistoricalTrends {
 
     @Test
     public void testCharacterWinRatio( ) {
-        DataProvider.PlayerInfo p1Info = new DataProvider.PlayerInfo( "WRL", "Will");
+        PlayerInfo p1Info = new PlayerInfo( "WRL", "Will");
 
-        DataProvider.BattleResult r1 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r1.getWinnerId()).thenReturn("WRL");
+        BattleResult r1 = Mockito.mock(BattleResult.class);
+        r1.winnerId = "WRL";
         Mockito.when(r1.characterFor("WRL")).thenReturn("Cammy");
-        DataProvider.BattleResult r2 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r2.getWinnerId()).thenReturn("RW");
+        BattleResult r2 = Mockito.mock(BattleResult.class);
+        r2.winnerId = "RW";
         Mockito.when(r2.characterFor("WRL")).thenReturn("Cammy");
-        DataProvider.BattleResult r3 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r3.getWinnerId()).thenReturn("WRL");
+        BattleResult r3 = Mockito.mock(BattleResult.class);
+        r3.winnerId = "WRL";
         Mockito.when(r3.characterFor("WRL")).thenReturn("Cammy");
-        DataProvider.BattleResult r4 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r4.getWinnerId()).thenReturn("WRL");
+        BattleResult r4 = Mockito.mock(BattleResult.class);
+        r4.winnerId = "WRL";
         Mockito.when(r4.characterFor("WRL")).thenReturn("Ryu");
 
-        ArrayList<DataProvider.BattleResult> results = new ArrayList<>();
+        ArrayList<BattleResult> results = new ArrayList<>();
         results.add(r1);
         results.add(r2);
         results.add(r3);
@@ -74,13 +77,13 @@ public class TestHistoricalTrends {
 
     @Test
     public void testEmptyWinRatio( ) {
-        DataProvider.PlayerInfo p1Info = new DataProvider.PlayerInfo( "WRL", "Will");
+        PlayerInfo p1Info = new PlayerInfo( "WRL", "Will");
 
-        DataProvider.BattleResult r1 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r1.getWinnerId()).thenReturn("WRL");
+        BattleResult r1 = Mockito.mock(BattleResult.class);
+        r1.winnerId = "WRL";
         Mockito.when(r1.characterFor("WRL")).thenReturn("Ryu");
 
-        ArrayList<DataProvider.BattleResult> results = new ArrayList<>();
+        ArrayList<BattleResult> results = new ArrayList<>();
         results.add(r1);
 
         HistoricalTrends trends = new HistoricalTrends(results);
@@ -92,27 +95,27 @@ public class TestHistoricalTrends {
 
     @Test
     public void testP1PairingHistory( ) {
-        DataProvider.PlayerInfo p1Info = new DataProvider.PlayerInfo( "WRL", "Will");
-        DataProvider.PlayerInfo p2Info = new DataProvider.PlayerInfo( "RW", "Ruaidhri");
+        PlayerInfo p1Info = new PlayerInfo( "WRL", "Will");
+        PlayerInfo p2Info = new PlayerInfo( "RW", "Ruaidhri");
 
-        DataProvider.BattleResult r1 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r1.getWinnerId()).thenReturn("WRL");
+        BattleResult r1 = Mockito.mock(BattleResult.class);
+        r1.winnerId ="WRL";
         Mockito.when(r1.characterFor("WRL")).thenReturn("Ryu");
         Mockito.when(r1.characterFor("RW")).thenReturn("Ken");
-        DataProvider.BattleResult r2 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r2.getWinnerId()).thenReturn("RW");
+        BattleResult r2 = Mockito.mock(BattleResult.class);
+        r2.winnerId ="RW";
         Mockito.when(r2.characterFor("WRL")).thenReturn("Ryu");
         Mockito.when(r2.characterFor("RW")).thenReturn("Ken");
-        DataProvider.BattleResult r3 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r3.getWinnerId()).thenReturn("WRL");
+        BattleResult r3 = Mockito.mock(BattleResult.class);
+        r3.winnerId ="WRL";
         Mockito.when(r3.characterFor("WRL")).thenReturn("Ryu");
         Mockito.when(r3.characterFor("RW")).thenReturn("R.Mika");
-        DataProvider.BattleResult r4 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r4.getWinnerId()).thenReturn("WRL");
+        BattleResult r4 = Mockito.mock(BattleResult.class);
+        r4.winnerId ="WRL";
         Mockito.when(r4.characterFor("WRL")).thenReturn("Ryu");
         Mockito.when(r4.characterFor("RW")).thenReturn("Ken");
 
-        ArrayList<DataProvider.BattleResult> results = new ArrayList<>();
+        ArrayList<BattleResult> results = new ArrayList<>();
         results.add(r1);
         results.add(r2);
         results.add(r3);
@@ -129,27 +132,27 @@ public class TestHistoricalTrends {
 
     @Test
     public void testP2PairingHistory( ) {
-        DataProvider.PlayerInfo p1Info = new DataProvider.PlayerInfo( "WRL", "Will");
-        DataProvider.PlayerInfo p2Info = new DataProvider.PlayerInfo( "RW", "Ruaidhri");
+        PlayerInfo p1Info = new PlayerInfo( "WRL", "Will");
+        PlayerInfo p2Info = new PlayerInfo( "RW", "Ruaidhri");
 
-        DataProvider.BattleResult r1 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r1.getWinnerId()).thenReturn("RW");
+        BattleResult r1 = Mockito.mock(BattleResult.class);
+        r1.winnerId ="RW";
         Mockito.when(r1.characterFor("WRL")).thenReturn("Laura");
         Mockito.when(r1.characterFor("RW")).thenReturn("Zangief");
-        DataProvider.BattleResult r2 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r2.getWinnerId()).thenReturn("RW");
+        BattleResult r2 = Mockito.mock(BattleResult.class);
+        r2.winnerId ="RW";
         Mockito.when(r2.characterFor("WRL")).thenReturn("Laura");
         Mockito.when(r2.characterFor("RW")).thenReturn("Zangief");
-        DataProvider.BattleResult r3 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r3.getWinnerId()).thenReturn("WRL");
+        BattleResult r3 = Mockito.mock(BattleResult.class);
+        r3.winnerId ="WRL";
         Mockito.when(r3.characterFor("WRL")).thenReturn("Laura");
         Mockito.when(r3.characterFor("RW")).thenReturn("Zangief");
-        DataProvider.BattleResult r4 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r4.getWinnerId()).thenReturn("WRL");
+        BattleResult r4 = Mockito.mock(BattleResult.class);
+        r4.winnerId ="WRL";
         Mockito.when(r4.characterFor("WRL")).thenReturn("Laura");
         Mockito.when(r4.characterFor("RW")).thenReturn("Birdie");
 
-        ArrayList<DataProvider.BattleResult> results = new ArrayList<>();
+        ArrayList<BattleResult> results = new ArrayList<>();
         results.add(r1);
         results.add(r2);
         results.add(r3);
@@ -166,19 +169,19 @@ public class TestHistoricalTrends {
 
     @Test
     public void testEvenPairingHistory( ) {
-        DataProvider.PlayerInfo p1Info = new DataProvider.PlayerInfo( "WRL", "Will");
-        DataProvider.PlayerInfo p2Info = new DataProvider.PlayerInfo( "RW", "Ruaidhri");
+        PlayerInfo p1Info = new PlayerInfo( "WRL", "Will");
+        PlayerInfo p2Info = new PlayerInfo( "RW", "Ruaidhri");
 
-        DataProvider.BattleResult r1 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r1.getWinnerId()).thenReturn("RW");
+        BattleResult r1 = Mockito.mock(BattleResult.class);
+        r1.winnerId ="RW";
         Mockito.when(r1.characterFor("WRL")).thenReturn("Ken");
         Mockito.when(r1.characterFor("RW")).thenReturn("Zangief");
-        DataProvider.BattleResult r2 = Mockito.mock(DataProvider.BattleResult.class);
-        Mockito.when(r2.getWinnerId()).thenReturn("WRL");
+        BattleResult r2 = Mockito.mock(BattleResult.class);
+        r2.winnerId ="WRL";
         Mockito.when(r2.characterFor("WRL")).thenReturn("Ken");
         Mockito.when(r2.characterFor("RW")).thenReturn("Zangief");
 
-        ArrayList<DataProvider.BattleResult> results = new ArrayList<>();
+        ArrayList<BattleResult> results = new ArrayList<>();
         results.add(r1);
         results.add(r2);
 
@@ -193,10 +196,10 @@ public class TestHistoricalTrends {
 
     @Test
     public void testNoPairingHistory( ) {
-        DataProvider.PlayerInfo p1Info = new DataProvider.PlayerInfo( "WRL", "Will");
-        DataProvider.PlayerInfo p2Info = new DataProvider.PlayerInfo( "RW", "Ruaidhri");
+        PlayerInfo p1Info = new PlayerInfo( "WRL", "Will");
+        PlayerInfo p2Info = new PlayerInfo( "RW", "Ruaidhri");
 
-        ArrayList<DataProvider.BattleResult> results = new ArrayList<>();
+        ArrayList<BattleResult> results = new ArrayList<>();
 
         HistoricalTrends trends = new HistoricalTrends(results);
         List<HistoricalTrends.Fact> facts = new ArrayList<>();
