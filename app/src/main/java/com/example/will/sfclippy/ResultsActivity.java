@@ -38,7 +38,7 @@ import java.util.List;
  * Created by will on 13/08/2016.
  */
 public class ResultsActivity extends AppCompatActivity
-implements ResultDialogListener {
+implements ResultDialogFragment.ResultDialogListener {
     private ResultsAdapter mResultsAdapter;
     private DataProvider mDataProvider;
     private static final int REQUEST_SAVE_RESULTS = 1001;
