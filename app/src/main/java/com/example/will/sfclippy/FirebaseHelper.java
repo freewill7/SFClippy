@@ -35,6 +35,13 @@ public class FirebaseHelper {
         return reference.child( username );
     }
 
+    public static void storePreference( DatabaseReference preferences,
+                                        String name, int score ) {
+        CharacterPreference pref = new CharacterPreference( name, score );
+        String key = name.toLowerCase().replaceAll( "[^\\p{Lower}]", "");
+        preferences.child(key).setValue(pref);
+    }
+
     public static void initialisePreferences( DatabaseReference reference ) {
         int defaultInt = 1;
         String[] characters = new String[] {
@@ -44,9 +51,7 @@ public class FirebaseHelper {
                 "Zangief", "Laura", "Dhalsim", "F.A.N.G.",
                 "Alex", "Guile", "Ibuki", "Balrog", "Juri" };
         for ( String character : characters ) {
-            CharacterPreference pref = new CharacterPreference( character, defaultInt );
-            String key = character.toLowerCase().replaceAll( "[^\\p{Lower}]", "");
-            reference.child(key).setValue(pref);
+            storePreference( reference, character, defaultInt );
         }
     }
 }

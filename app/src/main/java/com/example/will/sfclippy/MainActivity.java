@@ -48,6 +48,16 @@ implements View.OnClickListener {
     private FactsListener factsListener;
     private NameWatcher p1Watcher;
     private NameWatcher p2Watcher;
+    private StringWrapper p1Name = new StringWrapper("p1");
+    private StringWrapper p2Name = new StringWrapper("p2");
+
+    public static class StringWrapper {
+        public String str;
+
+        public StringWrapper( String name ) {
+            this.str = name;
+        }
+    }
 
     private DatabaseReference p1User;
     private DatabaseReference p2User;
@@ -92,12 +102,12 @@ implements View.OnClickListener {
             if ( p1Preferences == v ) {
                 Intent intent = new Intent(parent, CharacterPreferenceActivity.class);
                 intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY, p1Id );
-                intent.putExtra( CharacterPreferenceActivity.TITLE_PROPERY, p1Id + " prefs" );
+                intent.putExtra( CharacterPreferenceActivity.TITLE_PROPERY, p1Name.str + " prefs" );
                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
             } else if ( p2Preferences == v ) {
                 Intent intent = new Intent(parent, CharacterPreferenceActivity.class);
                 intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY, p2Id );
-                intent.putExtra(CharacterPreferenceActivity.TITLE_PROPERY, p2Id + " prefs");
+                intent.putExtra(CharacterPreferenceActivity.TITLE_PROPERY, p2Name.str + " prefs");
                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
             } else if ( results == v ) {
                 Intent intent = new Intent(parent, ResultsActivity.class);
@@ -265,13 +275,16 @@ implements View.OnClickListener {
         private TextView playerText;
         private Button playerWinButton;
         private Snackbar snackbar;
+        private StringWrapper nameRef;
 
         public NameWatcher( TextView playerText,
                             Button playerWinButton,
-                            Snackbar snackbar ) {
+                            Snackbar snackbar,
+                            StringWrapper name ) {
             this.playerText = playerText;
             this.playerWinButton = playerWinButton;
             this.snackbar = snackbar;
+            this.nameRef = name;
         }
 
         @Override
@@ -282,6 +295,7 @@ implements View.OnClickListener {
             playerText.setText( name + " choice:" );
             playerWinButton.setText( name + " win" );
             snackbar.setText( "Recorded win for " + name );
+            this.nameRef.str = name;
         }
 
         @Override
@@ -331,8 +345,8 @@ implements View.OnClickListener {
                 "Recorded win for P2",
                 Snackbar.LENGTH_LONG );
 
-        p1Watcher = new NameWatcher( p1Text, p1Win, p1Snackbar );
-        p2Watcher = new NameWatcher( p2Text, p2Win, p2Snackbar );
+        p1Watcher = new NameWatcher( p1Text, p1Win, p1Snackbar, p1Name );
+        p2Watcher = new NameWatcher( p2Text, p2Win, p2Snackbar, p2Name );
 
         // get id associated with the battle
         // first from intent... then from saved instance state

@@ -68,9 +68,9 @@ implements ResultDialogListener {
         @Override
         public boolean onLongClick( View view ) {
             Bundle bundle = new Bundle();
-            bundle.putInt( ResultDialog.ITEM_ID_VAR, entryIndex );
+            bundle.putInt( ResultDialogFragment.ITEM_ID_VAR, entryIndex );
 
-            ResultDialog dialog = new ResultDialog();
+            ResultDialogFragment dialog = new ResultDialogFragment();
             dialog.setArguments(bundle);
             dialog.show( activity.getFragmentManager(), "frame name" );
 

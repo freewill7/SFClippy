@@ -1,7 +1,7 @@
 package com.example.will.sfclippy;
 
+import android.app.Activity;
 import android.content.Intent;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -25,7 +25,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-public class CharacterPreferenceActivity extends AppCompatActivity {
+public class CharacterPreferenceActivity extends AppCompatActivity
+        implements CharacterRatingFragment.RatingInteractionListener {
     public static final String PLAYER_ID_PROPERTY = "player_id";
     public static final String TITLE_PROPERY = "title";
     private DatabaseReference mReference;
@@ -55,22 +56,27 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
      */
     public static class ViewHolder extends RecyclerView.ViewHolder
             implements View.OnClickListener {
+        private Activity activity;
         public RatingBar ratingBar;
         public TextView mTextView;
         public CharacterPreference mPreference;
         private IconUpdater mIconUpdater;
 
-        public ViewHolder( View container, IconUpdater iconUpdater ) {
+        public ViewHolder( Activity activity, View container, IconUpdater iconUpdater ) {
             super(container);
+            this.activity = activity;
             ratingBar = (RatingBar) container.findViewById(R.id.characterRatingBar);
-            //mButton.setOnClickListener( this );
+            container.setClickable(true);
+            container.setOnClickListener(this);
             mTextView = (TextView) container.findViewById(R.id.textPrefText);
             mIconUpdater = iconUpdater;
         }
 
         @Override
         public void onClick( View v ) {
-            // mPreference.cycleScore();
+            CharacterRatingFragment frag = CharacterRatingFragment.newInstance( mPreference.name,
+                    mPreference.score );
+            frag.show( activity.getFragmentManager(), "frame name" );
             mIconUpdater.updateIcon( ratingBar, mTextView, mPreference );
         }
     }
@@ -82,6 +88,7 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
             extends RecyclerView.Adapter<ViewHolder>
             implements ValueEventListener {
         private DatabaseReference refPreferences;
+        private Activity activity;
         private IconUpdater iconUpdater;
         private ArrayList<CharacterPreference> mDataSet = new ArrayList<>();
         private Comparator<CharacterPreference> orderer = new CharacterPreference.DescendingScore();
@@ -92,12 +99,15 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
          * After construction you should register the object as a ValueEventListener
          * for the provided preferences object. The preferences object is only provided
          * for making updates to preferences.
-         * @param preferences A preferences reference for update
+         * @param activity The parent activity.
+         * @param preferences A preferences reference for update.
          * @param iconUpdater For updating icon based on preference.
          */
-        public PreferencesAdapter(DatabaseReference preferences,
-                                  IconUpdater iconUpdater ) {
+        public PreferencesAdapter( Activity activity,
+                                   DatabaseReference preferences,
+                                   IconUpdater iconUpdater ) {
             this.refPreferences = preferences;
+            this.activity = activity;
             this.iconUpdater = iconUpdater;
         }
 
@@ -130,7 +140,7 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
             View layout = LayoutInflater.from( parent.getContext() )
                     .inflate( R.layout.layout_character_preference, parent, false );
-            ViewHolder vh = new ViewHolder( layout, iconUpdater );
+            ViewHolder vh = new ViewHolder( activity, layout, iconUpdater );
             return vh;
         }
 
@@ -171,7 +181,7 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
         IconUpdater updater = new IconUpdater( );
 
         mReference = dataProvider.getPreferences( playerId );
-        mAdapter = new PreferencesAdapter( mReference, updater );
+        mAdapter = new PreferencesAdapter( this, mReference, updater );
         mReference.addValueEventListener( mAdapter );
 
         final RecyclerView listView = (RecyclerView) findViewById( R.id.characterPrefList );
@@ -187,5 +197,10 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
     public void onDestroy( ) {
         mReference.removeEventListener(mAdapter);
         super.onDestroy();
+    }
+
+    @Override
+    public void onRatingChange( String character, int score ) {
+        FirebaseHelper.storePreference( mReference, character, score );
     }
 }
