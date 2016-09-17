@@ -12,8 +12,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.ImageButton;
+import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.example.will.sfclippy.models.CharacterPreference;
@@ -31,36 +30,23 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
     public static final String TITLE_PROPERY = "title";
     private DatabaseReference mReference;
     private PreferencesAdapter mAdapter;
-    private Button btnSave;
     private DataProvider dataProvider;
     private String playerId;
     private static String TAG = "CharacterPreference";
 
     /**
-     * Convenience class for updating button icons.
+     * Convenience class for updating visible score.
      */
     private static class IconUpdater {
-        private Drawable good;
-        private Drawable average;
-        private Drawable bad;
 
-        public IconUpdater( Drawable good, Drawable average, Drawable bad ) {
-            this.good = good;
-            this.average = average;
-            this.bad = bad;
+        public IconUpdater( ) {
+            // nothing to do
         }
 
-        public void updateIcon( ImageButton btn, TextView textView,
-                                CharacterPreference pref ) {
+        public void updateIcon(RatingBar rating, TextView textView,
+                               CharacterPreference pref ) {
             textView.setText( pref.name + " (" + pref.score + ")");
-            int score = pref.score;
-            if ( score == 0 ) {
-                btn.setImageDrawable(bad);
-            } else if ( score == 1 ) {
-                btn.setImageDrawable(average);
-            } else {
-                btn.setImageDrawable(good);
-            }
+            rating.setRating( (float) pref.score );
         }
     }
 
@@ -69,15 +55,15 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
      */
     public static class ViewHolder extends RecyclerView.ViewHolder
             implements View.OnClickListener {
-        public ImageButton mButton;
+        public RatingBar ratingBar;
         public TextView mTextView;
         public CharacterPreference mPreference;
         private IconUpdater mIconUpdater;
 
         public ViewHolder( View container, IconUpdater iconUpdater ) {
             super(container);
-            mButton = (ImageButton) container.findViewById(R.id.btnPrefModify);
-            mButton.setOnClickListener( this );
+            ratingBar = (RatingBar) container.findViewById(R.id.characterRatingBar);
+            //mButton.setOnClickListener( this );
             mTextView = (TextView) container.findViewById(R.id.textPrefText);
             mIconUpdater = iconUpdater;
         }
@@ -85,7 +71,7 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
         @Override
         public void onClick( View v ) {
             // mPreference.cycleScore();
-            mIconUpdater.updateIcon( mButton, mTextView, mPreference );
+            mIconUpdater.updateIcon( ratingBar, mTextView, mPreference );
         }
     }
 
@@ -152,7 +138,7 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
         public void onBindViewHolder( ViewHolder viewHolder, int index ) {
             CharacterPreference pref = mDataSet.get(index);
             viewHolder.mPreference = pref;
-            iconUpdater.updateIcon( viewHolder.mButton, viewHolder.mTextView, pref );
+            iconUpdater.updateIcon( viewHolder.ratingBar, viewHolder.mTextView, pref );
         }
 
         @Override
@@ -180,12 +166,9 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
         setSupportActionBar(myToolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle( title );
 
-        IconUpdater updater = new IconUpdater( getDrawable(R.drawable.ic_star_golden_24dp),
-                getDrawable(R.drawable.ic_star_half_24dp),
-                getDrawable(R.drawable.ic_star_empty_24dp1) );
+        IconUpdater updater = new IconUpdater( );
 
         mReference = dataProvider.getPreferences( playerId );
         mAdapter = new PreferencesAdapter( mReference, updater );
