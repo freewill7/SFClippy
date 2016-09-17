@@ -1,10 +1,7 @@
 package com.example.will.sfclippy;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.Icon;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -13,29 +10,31 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.google.android.gms.vision.text.Line;
-
-import org.w3c.dom.Text;
+import com.example.will.sfclippy.models.CharacterPreference;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 
 public class CharacterPreferenceActivity extends AppCompatActivity {
     public static final String PLAYER_ID_PROPERTY = "player_id";
-    private List<DataProvider.CharacterPreference> characterPreferences;
+    public static final String TITLE_PROPERY = "title";
+    private DatabaseReference mReference;
+    private PreferencesAdapter mAdapter;
     private Button btnSave;
     private DataProvider dataProvider;
     private String playerId;
+    private static String TAG = "CharacterPreference";
 
     /**
      * Convenience class for updating button icons.
@@ -52,11 +51,12 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
         }
 
         public void updateIcon( ImageButton btn, TextView textView,
-                                DataProvider.CharacterPreference pref ) {
-            textView.setText( pref.getCharacterName() + " (" + pref.getScore() + ")");
-            if ( pref.getScore() == 0 ) {
+                                CharacterPreference pref ) {
+            textView.setText( pref.name + " (" + pref.score + ")");
+            int score = pref.score;
+            if ( score == 0 ) {
                 btn.setImageDrawable(bad);
-            } else if ( pref.getScore() == 1 ) {
+            } else if ( score == 1 ) {
                 btn.setImageDrawable(average);
             } else {
                 btn.setImageDrawable(good);
@@ -65,43 +65,83 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
     }
 
     /**
+     * A view within the recycler view.
+     */
+    public static class ViewHolder extends RecyclerView.ViewHolder
+            implements View.OnClickListener {
+        public ImageButton mButton;
+        public TextView mTextView;
+        public CharacterPreference mPreference;
+        private IconUpdater mIconUpdater;
+
+        public ViewHolder( View container, IconUpdater iconUpdater ) {
+            super(container);
+            mButton = (ImageButton) container.findViewById(R.id.btnPrefModify);
+            mButton.setOnClickListener( this );
+            mTextView = (TextView) container.findViewById(R.id.textPrefText);
+            mIconUpdater = iconUpdater;
+        }
+
+        @Override
+        public void onClick( View v ) {
+            // mPreference.cycleScore();
+            mIconUpdater.updateIcon( mButton, mTextView, mPreference );
+        }
+    }
+
+    /**
      * Adapter for preferences data.
      */
     private static class PreferencesAdapter
-            extends RecyclerView.Adapter<PreferencesAdapter.ViewHolder> {
-        private List<DataProvider.CharacterPreference> preferences;
+            extends RecyclerView.Adapter<ViewHolder>
+            implements ValueEventListener {
+        private DatabaseReference refPreferences;
         private IconUpdater iconUpdater;
+        private ArrayList<CharacterPreference> mDataSet = new ArrayList<>();
+        private Comparator<CharacterPreference> orderer = new CharacterPreference.DescendingScore();
 
-        public static class ViewHolder extends RecyclerView.ViewHolder
-        implements View.OnClickListener {
-            public ImageButton mButton;
-            public TextView mTextView;
-            public DataProvider.CharacterPreference mPreference;
-            private IconUpdater mIconUpdater;
-
-            public ViewHolder( View container, IconUpdater iconUpdater ) {
-                super(container);
-                mButton = (ImageButton) container.findViewById(R.id.btnPrefModify);
-                mButton.setOnClickListener( this );
-                mTextView = (TextView) container.findViewById(R.id.textPrefText);
-                mIconUpdater = iconUpdater;
-            }
-
-            @Override
-            public void onClick( View v ) {
-                mPreference.cycleScore();
-                mIconUpdater.updateIcon( mButton, mTextView, mPreference );
-            }
-        }
-
-        public PreferencesAdapter(List<DataProvider.CharacterPreference> preferences,
+        /**
+         * Construct a preferences adapter.
+         *
+         * After construction you should register the object as a ValueEventListener
+         * for the provided preferences object. The preferences object is only provided
+         * for making updates to preferences.
+         * @param preferences A preferences reference for update
+         * @param iconUpdater For updating icon based on preference.
+         */
+        public PreferencesAdapter(DatabaseReference preferences,
                                   IconUpdater iconUpdater ) {
-            this.preferences = preferences;
+            this.refPreferences = preferences;
             this.iconUpdater = iconUpdater;
         }
 
         @Override
-        public PreferencesAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
+        public void onDataChange(DataSnapshot snapshot) {
+            if ( null == snapshot.getValue() ) {
+                // bootstrap preferences
+                FirebaseHelper.initialisePreferences(refPreferences);
+            } else {
+                ArrayList<CharacterPreference> preferences = new ArrayList<>();
+                for ( DataSnapshot child : snapshot.getChildren() ) {
+                    preferences.add( child.getValue(CharacterPreference.class) );
+                }
+
+                // sort appropriately
+                Collections.sort( preferences, orderer );
+
+                // update and notify
+                this.mDataSet = preferences;
+                notifyDataSetChanged();
+            }
+        }
+
+        @Override
+        public void onCancelled(DatabaseError error) {
+            Log.e( TAG, "onCancelled", error.toException());
+        }
+
+        @Override
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
             View layout = LayoutInflater.from( parent.getContext() )
                     .inflate( R.layout.layout_character_preference, parent, false );
             ViewHolder vh = new ViewHolder( layout, iconUpdater );
@@ -110,14 +150,14 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder( ViewHolder viewHolder, int index ) {
-            DataProvider.CharacterPreference pref = preferences.get(index);
+            CharacterPreference pref = mDataSet.get(index);
             viewHolder.mPreference = pref;
             iconUpdater.updateIcon( viewHolder.mButton, viewHolder.mTextView, pref );
         }
 
         @Override
         public int getItemCount( ) {
-            return preferences.size();
+            return mDataSet.size();
         }
     }
 
@@ -136,12 +176,20 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         playerId = intent.getStringExtra( PLAYER_ID_PROPERTY );
+        String title = intent.getStringExtra( TITLE_PROPERY );
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
         setSupportActionBar(myToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle( dataProvider.getPlayerById(playerId).getPlayerName()
-                + " preferences" );
+        getSupportActionBar().setTitle( title );
+
+        IconUpdater updater = new IconUpdater( getDrawable(R.drawable.ic_star_golden_24dp),
+                getDrawable(R.drawable.ic_star_half_24dp),
+                getDrawable(R.drawable.ic_star_empty_24dp1) );
+
+        mReference = dataProvider.getPreferences( playerId );
+        mAdapter = new PreferencesAdapter( mReference, updater );
+        mReference.addValueEventListener( mAdapter );
 
         final RecyclerView listView = (RecyclerView) findViewById( R.id.characterPrefList );
         listView.setHasFixedSize(true);
@@ -149,84 +197,12 @@ public class CharacterPreferenceActivity extends AppCompatActivity {
         // use linear layout manager
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         listView.setLayoutManager(layoutManager);
-
-        DataProvider provider = AppSingleton.getInstance().getDataProvider();
-
-        // take a copy of preferences so we can modify
-        // provider.getCharacterPreferences(playerId);
-        List<DataProvider.CharacterPreference> prefs = new ArrayList<DataProvider.CharacterPreference>();
-        characterPreferences = new ArrayList<>();
-        for ( DataProvider.CharacterPreference pref : prefs ) {
-            characterPreferences.add( new DataProvider.CharacterPreference(pref) );
-        }
-
-        // sort the preferences so favourites are at the top
-        Collections.sort(characterPreferences, new Comparator<DataProvider.CharacterPreference>() {
-            @Override
-            public int compare(DataProvider.CharacterPreference lhs, DataProvider.CharacterPreference rhs) {
-                int ret = rhs.getScore() - lhs.getScore();
-                if ( 0 == ret ) {
-                    ret = lhs.getCharacterName().compareTo( rhs.getCharacterName() );
-                }
-                return ret;
-            }
-        });
-
-        IconUpdater updater = new IconUpdater( getDrawable(R.drawable.ic_star_golden_24dp),
-                getDrawable(R.drawable.ic_star_half_24dp),
-                getDrawable(R.drawable.ic_star_empty_24dp1) );
-
-        // specify an adapter
-        Log.d( getLocalClassName(), "Creating adapter for " + characterPreferences.size());
-        RecyclerView.Adapter mAdapter = new PreferencesAdapter( characterPreferences, updater );
         listView.setAdapter(mAdapter);
     }
 
-    private static class UpdatePreferences extends AsyncTask<Void,String,Void> {
-        private DataProvider dataProvider;
-        private String playerId;
-        private List<DataProvider.CharacterPreference> prefs;
-        private Activity caller;
-
-        public UpdatePreferences( DataProvider dataProvider,
-                                  String playerId,
-                                  List<DataProvider.CharacterPreference> prefs,
-                                  Activity caller ) {
-            this.dataProvider = dataProvider;
-            this.playerId = playerId;
-            this.prefs = prefs;
-            this.caller = caller;
-        }
-
-        @Override
-        public Void doInBackground( Void ... params ) {
-            // TODO progress and animation
-            dataProvider.replaceCharacterPreferences( playerId, prefs );
-
-            return null;
-        }
-
-        @Override
-        public void onPostExecute( Void result ) {
-            caller.finish();
-        }
-    }
-
     @Override
-    public boolean onOptionsItemSelected( MenuItem item ) {
-        switch ( item.getItemId() ) {
-            case R.id.action_accept:
-                UpdatePreferences update = new UpdatePreferences( dataProvider,
-                        playerId,
-                        characterPreferences,
-                        this );
-                update.execute();
-
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-
-        }
+    public void onDestroy( ) {
+        mReference.removeEventListener(mAdapter);
+        super.onDestroy();
     }
-
 }

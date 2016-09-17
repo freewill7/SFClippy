@@ -18,20 +18,15 @@ import android.view.ViewGroup;
 import android.widget.Button;
 
 import com.example.will.sfclippy.models.CharacterPreference;
-import com.google.api.client.util.Data;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
-import com.google.gson.Gson;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 
 public class CharacterSelectActivity extends AppCompatActivity {
     static public final String GET_CHARACTER_PROPERTY = "choice";
@@ -71,22 +66,6 @@ public class CharacterSelectActivity extends AppCompatActivity {
     }
 
     /**
-     * Order characters by score (highest first).
-     */
-    public static class DescendingScore implements Comparator<CharacterPreference> {
-        public int compare(CharacterPreference lhs, CharacterPreference rhs) {
-            // higher rating goes first
-            int diff = rhs.score - lhs.score;
-            if ( 0 == diff ) {
-                // then order by ascending alphabetical
-                diff = lhs.name.compareTo( rhs.name );
-            }
-
-            return diff;
-        }
-    }
-
-    /**
      * Adapter between a FirebaseDb and RecyclerView.
      */
     public static class MySelectAdapter extends RecyclerView.Adapter<ViewHolder>
@@ -104,7 +83,7 @@ public class CharacterSelectActivity extends AppCompatActivity {
             mPreferences = preferences;
             defaultItemId = -1;
 
-            orderer = new DescendingScore();
+            orderer = new CharacterPreference.DescendingScore();
         }
 
         @Override

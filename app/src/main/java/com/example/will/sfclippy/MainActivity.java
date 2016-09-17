@@ -20,6 +20,7 @@ import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
 import com.example.will.sfclippy.models.BattleResult;
+import com.example.will.sfclippy.models.CharacterPreference;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -91,10 +92,12 @@ implements View.OnClickListener {
             if ( p1Preferences == v ) {
                 Intent intent = new Intent(parent, CharacterPreferenceActivity.class);
                 intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY, p1Id );
+                intent.putExtra( CharacterPreferenceActivity.TITLE_PROPERY, p1Id + " prefs" );
                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
             } else if ( p2Preferences == v ) {
                 Intent intent = new Intent(parent, CharacterPreferenceActivity.class);
                 intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY, p2Id );
+                intent.putExtra(CharacterPreferenceActivity.TITLE_PROPERY, p2Id + " prefs");
                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
             } else if ( results == v ) {
                 Intent intent = new Intent(parent, ResultsActivity.class);
