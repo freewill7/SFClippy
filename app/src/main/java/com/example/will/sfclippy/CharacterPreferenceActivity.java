@@ -9,7 +9,6 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RatingBar;
@@ -34,6 +33,7 @@ public class CharacterPreferenceActivity extends AppCompatActivity
     private DataProvider dataProvider;
     private String playerId;
     private static String TAG = "CharacterPreference";
+    private RandomSelector selector;
 
     /**
      * Convenience class for updating visible score.
@@ -45,8 +45,9 @@ public class CharacterPreferenceActivity extends AppCompatActivity
         }
 
         public void updateIcon(RatingBar rating, TextView textView,
-                               CharacterPreference pref ) {
-            textView.setText( pref.name + " (" + pref.score + ")");
+                               CharacterPreference pref, RandomSelector selector ) {
+            int percent = selector.percentageChance(pref);
+            textView.setText( pref.name + " (" + percent + "% chance)");
             rating.setRating( (float) pref.score );
         }
     }
@@ -77,7 +78,6 @@ public class CharacterPreferenceActivity extends AppCompatActivity
             CharacterRatingFragment frag = CharacterRatingFragment.newInstance( mPreference.name,
                     mPreference.score );
             frag.show( activity.getFragmentManager(), "frame name" );
-            mIconUpdater.updateIcon( ratingBar, mTextView, mPreference );
         }
     }
 
@@ -92,6 +92,8 @@ public class CharacterPreferenceActivity extends AppCompatActivity
         private IconUpdater iconUpdater;
         private ArrayList<CharacterPreference> mDataSet = new ArrayList<>();
         private Comparator<CharacterPreference> orderer = new CharacterPreference.DescendingScore();
+        private RandomSelector selector = new RandomSelector();
+
 
         /**
          * Construct a preferences adapter.
@@ -127,6 +129,8 @@ public class CharacterPreferenceActivity extends AppCompatActivity
 
                 // update and notify
                 this.mDataSet = preferences;
+                selector.setCharacters(preferences);
+
                 notifyDataSetChanged();
             }
         }
@@ -148,19 +152,13 @@ public class CharacterPreferenceActivity extends AppCompatActivity
         public void onBindViewHolder( ViewHolder viewHolder, int index ) {
             CharacterPreference pref = mDataSet.get(index);
             viewHolder.mPreference = pref;
-            iconUpdater.updateIcon( viewHolder.ratingBar, viewHolder.mTextView, pref );
+            iconUpdater.updateIcon( viewHolder.ratingBar, viewHolder.mTextView, pref, selector );
         }
 
         @Override
         public int getItemCount( ) {
             return mDataSet.size();
         }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_character_preference, menu);
-        return true;
     }
 
     @Override

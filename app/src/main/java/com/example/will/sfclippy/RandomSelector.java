@@ -17,16 +17,42 @@ public class RandomSelector {
     private Random randomGenerator;
     private static final String TAG = "RandomSelector";
 
-    public RandomSelector( List<CharacterPreference> chars ) {
-        this.chars = chars;
+    private void init( ) {
         this.randomGenerator = new Random( Calendar.getInstance().getTimeInMillis() );
     }
 
-    public int randomCharacter( ) {
+    public RandomSelector( ) {
+        init();
+    }
+
+    public RandomSelector( List<CharacterPreference> chars ) {
+        init();
+        this.chars = chars;
+    }
+
+    public void setCharacters( List<CharacterPreference> chars ) {
+        this.chars = chars;
+    }
+
+    public int getTotal( ) {
         int total = 0;
         for ( CharacterPreference character : chars ) {
-            total += character.score;
+            total += getCharacterScore(character);
         }
+        return total;
+    }
+
+    public int getCharacterScore( CharacterPreference character ) {
+        return character.score - 1;
+
+    }
+    public int percentageChance( CharacterPreference character ) {
+        int total = getTotal();
+        return (100 * getCharacterScore(character)) / total;
+    }
+
+    public int randomCharacter( ) {
+        int total = getTotal();
         Log.d( TAG, "Total is " + total);
 
         // hack to get round lack of randomness
@@ -40,7 +66,7 @@ public class RandomSelector {
         for ( CharacterPreference character : chars ) {
             idx++;
 
-            tally += character.score;
+            tally += getCharacterScore(character);
             if ( tally > choice ) {
                 Log.d( TAG,
                         "Moving to " + idx + " (" + character.name + ")");
