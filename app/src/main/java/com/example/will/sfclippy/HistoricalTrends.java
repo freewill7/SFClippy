@@ -1,5 +1,6 @@
 package com.example.will.sfclippy;
 
+import android.util.Log;
 import android.util.Pair;
 
 import com.example.will.sfclippy.models.BattleResult;
@@ -92,6 +93,10 @@ public class HistoricalTrends {
             this.p1Player = p1Player;
             this.p2Id = p2Id;
             this.p2Player = p2Player;
+
+            Log.d( "BattleKey", "Battle key (" + p1Id + "," + p1Player
+            + "," + p2Id
+            + "," + p2Player );
         }
 
         @Override
@@ -104,6 +109,11 @@ public class HistoricalTrends {
                         p2Player.equals(otherKey.p2Player);
             }
             return false;
+        }
+
+        @Override
+        public int hashCode( ) {
+            return 1;
         }
     }
 
@@ -148,7 +158,7 @@ public class HistoricalTrends {
         if ( 50 == results.getWinPercentage() ) {
             return "Previous results for this pairing are even (" +
                     results.getTotalBattles() + " battles)";
-        } else if ( 50 < results.getWinPercentage() ) {
+        } else if ( results.getWinPercentage() < 50 ) {
             return formatPastBattleWinner( player2, (100-p1Percent), totalCounter );
         } else {
             return formatPastBattleWinner( player1, p1Percent, totalCounter );
@@ -196,10 +206,11 @@ public class HistoricalTrends {
         List<Fact> ret = new ArrayList<>();
 
         // find previous stats for this battle
+        Log.d( "HistoricalTrends", "Fetching from " + pastBattles.size());
         BattleKey key = new BattleKey( player1.playerId, player1Choice,
                 player2.playerId, player2Choice );
         BattleCounter pastBattle = pastBattles.get(key);
-        if ( null != pastBattle && 0 < pastBattle.getTotalBattles() ) {
+        if ( null != pastBattle && pastBattle.getTotalBattles() > 0 ) {
             String info = formatPastBattles( player1, player2, pastBattle );
             ret.add( new Fact(info, GENERAL_BATTLE_SCORE));
         }
@@ -257,6 +268,7 @@ public class HistoricalTrends {
     }
 
     private void addByBattleResult( String p1Id, String p2Id, BattleResult result ) {
+        Log.d( "HistoricalTrends", "Storing");
         BattleKey key = new BattleKey( p1Id, result.characterFor(p1Id),
                 p2Id, result.characterFor(p2Id) );
 
