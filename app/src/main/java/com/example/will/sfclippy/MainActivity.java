@@ -66,23 +66,17 @@ implements View.OnClickListener, FactsUpdateListener {
 
     private class MenuListener implements View.OnClickListener {
         private final Activity parent;
-        private final Button p1Preferences;
-        private final Button p2Preferences;
         private final Button results;
         private final Button backup;
         private final String p1Id;
         private final String p2Id;
 
         public MenuListener( Activity parent,
-                             Button p1Preferences,
-                             Button p2Preferences,
                              Button results,
                              Button backup,
                              String p1Id,
                              String p2Id ) {
             this.parent = parent;
-            this.p1Preferences = p1Preferences;
-            this.p2Preferences = p2Preferences;
             this.results = results;
             this.backup = backup;
             this.p1Id = p1Id;
@@ -91,19 +85,7 @@ implements View.OnClickListener, FactsUpdateListener {
 
         @Override
         public void onClick( View v ) {
-            if ( p1Preferences == v ) {
-                Intent intent = new Intent(parent, CharacterPreferenceActivity.class);
-                intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY, p1Id );
-                intent.putExtra( CharacterPreferenceActivity.TITLE_PROPERY,
-                        p1Watcher.getPlayerInfo().playerName + " prefs" );
-                startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
-            } else if ( p2Preferences == v ) {
-                Intent intent = new Intent(parent, CharacterPreferenceActivity.class);
-                intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY, p2Id );
-                intent.putExtra(CharacterPreferenceActivity.TITLE_PROPERY,
-                        p2Watcher.getPlayerInfo().playerName + " prefs");
-                startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
-            } else if ( results == v ) {
+             if ( results == v ) {
                 Intent intent = new Intent(parent, ResultsActivity.class);
                 intent.putExtra( ResultsActivity.P1_ID, p1Id );
                 intent.putExtra( ResultsActivity.P2_ID, p2Id );
@@ -224,18 +206,12 @@ implements View.OnClickListener, FactsUpdateListener {
     }
 
     private void setupDrawer( ) {
-        Button btnP1Preferences = (Button) findViewById(R.id.btnPlayer1Prefs);
-        //btnP1Preferences.setText( labelPreferences(dataProvider.getPlayer1Name()) );
-        Button btnP2Preferences = (Button) findViewById(R.id.btnPlayer2Prefs);
-        //btnP2Preferences.setText( labelPreferences(dataProvider.getPlayer2Name()) );
         Button btnBackup = (Button) findViewById(R.id.btnBackup);
         Button btnResults = (Button) findViewById(R.id.btnResults);
 
         MenuListener listener = new MenuListener( this,
-                btnP1Preferences, btnP2Preferences, btnResults,
+                btnResults,
                 btnBackup, player1Id, player2Id );
-        btnP1Preferences.setOnClickListener( listener );
-        btnP2Preferences.setOnClickListener( listener );
         btnBackup.setOnClickListener( listener );
         btnResults.setOnClickListener( listener );
     }

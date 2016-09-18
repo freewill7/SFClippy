@@ -16,6 +16,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.RatingBar;
+import android.widget.TextView;
 
 import com.example.will.sfclippy.models.CharacterPreference;
 import com.google.firebase.database.DataSnapshot;
@@ -28,7 +31,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class CharacterSelectActivity extends AppCompatActivity {
+public class CharacterSelectActivity extends AppCompatActivity
+implements CharacterRatingFragment.RatingInteractionListener {
     static public final String GET_CHARACTER_PROPERTY = "choice";
     static public final String PLAYER_ID = "player_id";
     static public final String TITLE = "title";
@@ -41,21 +45,39 @@ public class CharacterSelectActivity extends AppCompatActivity {
      */
     public static class ViewHolder extends RecyclerView.ViewHolder {
         public Activity mActivity;
-        public Button mButton;
+        public View mView;
+        public RatingBar mRatingBar;
+        public TextView mTextView;
         public CharacterPreference mCharacter;
 
-        public ViewHolder( Activity activity, Button button ) {
-            super(button);
+        public ViewHolder( Activity activity, View view ) {
+            super(view);
             mActivity = activity;
-            mButton = button;
+            mView = view;
+            mRatingBar = (RatingBar) mView.findViewById(R.id.characterRatingBar);
+            mTextView = (TextView) mView.findViewById(R.id.characterLabel);
 
-            mButton.setOnClickListener(new View.OnClickListener() {
+            // short click for select
+            mView.setClickable(true);
+            mView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     Intent resultData = new Intent();
                     resultData.putExtra(GET_CHARACTER_PROPERTY, getCharacter().name );
                     mActivity.setResult(Activity.RESULT_OK, resultData);
                     mActivity.finish();
+                }
+            });
+
+            // long click for modify
+            mView.setLongClickable(true);
+            mView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    CharacterRatingFragment frag = CharacterRatingFragment.newInstance(
+                            mCharacter.name, mCharacter.score );
+                    frag.show( mActivity.getFragmentManager(), "frame name" );
+                    return true;
                 }
             });
         }
@@ -76,6 +98,7 @@ public class CharacterSelectActivity extends AppCompatActivity {
         private int defaultItemId;
         private static final String TAG = "MySelectAdapter";
         private Comparator<CharacterPreference> orderer;
+        private RandomSelector selector = new RandomSelector();
 
         public MySelectAdapter( Activity activity,
                                 DatabaseReference preferences ) {
@@ -102,6 +125,7 @@ public class CharacterSelectActivity extends AppCompatActivity {
 
                 // Update and notify
                 this.mDataset = preferences;
+                selector.setCharacters(preferences);
                 notifyDataSetChanged();
             }
         }
@@ -113,21 +137,23 @@ public class CharacterSelectActivity extends AppCompatActivity {
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
-            Button btn = (Button) LayoutInflater.from( parent.getContext() )
-                    .inflate( R.layout.button_character, parent, false );
-            ViewHolder vh = new ViewHolder( mActivity, btn );
+            View view = (View) LayoutInflater.from( parent.getContext() )
+                    .inflate( R.layout.layout_character_choice, parent, false );
+            ViewHolder vh = new ViewHolder( mActivity, view );
             return vh;
         }
 
         @Override
         public void onBindViewHolder( ViewHolder holder, int position ) {
             CharacterPreference pref = mDataset.get(position);
-            holder.mButton.setText(pref.name + "(" + pref.score + ")");
+            int chance = selector.percentageChance(pref);
+            holder.mTextView.setText(pref.name + " (" + chance + "%)");
+            holder.mRatingBar.setRating( (int) pref.score );
             holder.mCharacter = pref;
             if ( defaultItemId == position ) {
-                holder.mButton.setBackgroundColor( mActivity.getColor(R.color.colorAccent ) );
+                holder.mTextView.setBackgroundColor( mActivity.getColor(R.color.colorAccent ) );
             } else {
-                holder.mButton.setBackgroundColor( Color.TRANSPARENT );
+                holder.mTextView.setBackgroundColor( Color.TRANSPARENT );
             }
         }
 
@@ -204,5 +230,10 @@ public class CharacterSelectActivity extends AppCompatActivity {
     public void onDestroy(  ) {
         mReference.removeEventListener(mAdapter);
         super.onDestroy();
+    }
+
+    @Override
+    public void onRatingChange( String character, int score ) {
+        FirebaseHelper.storePreference( mReference, character, score );
     }
 }

@@ -39,6 +39,11 @@ public class RandomSelector {
         for ( CharacterPreference character : chars ) {
             total += getCharacterScore(character);
         }
+
+        if ( 0 == total ) {
+            total = 1;
+        }
+
         return total;
     }
 

@@ -53,7 +53,7 @@ public class FirebaseHelper {
     }
 
     public static void initialisePreferences( DatabaseReference reference ) {
-        int defaultInt = 1;
+        int defaultInt = 2;
         String[] characters = new String[] {
                 "Ryu", "Chun-Li", "Nash", "M.Bison",
                 "Cammy", "Birdie", "Ken", "Necalli",
