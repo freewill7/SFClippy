@@ -1,6 +1,9 @@
 package com.example.will.sfclippy;
 
+import android.util.Log;
+
 import com.example.will.sfclippy.models.CharacterPreference;
+import com.example.will.sfclippy.models.PlayerInfo;
 import com.google.firebase.database.DatabaseReference;
 
 /**
@@ -8,6 +11,7 @@ import com.google.firebase.database.DatabaseReference;
  */
 
 public class FirebaseHelper {
+    private static final String TAG = "FirebaseHelper";
     public static final String TAG_USERNAME = "username";
 
     public static class FirebaseUser {
@@ -20,6 +24,10 @@ public class FirebaseHelper {
         public DatabaseReference getUsername( ) {
             return reference.child(TAG_USERNAME);
         }
+
+        public DatabaseReference getReference( ) {
+            return reference;
+        }
     }
 
     public static FirebaseUser getUser( DatabaseReference users, String userId ) {
@@ -27,7 +35,9 @@ public class FirebaseHelper {
     }
 
     public static void initialiseUser(DatabaseReference reference, String username ) {
-        reference.child( TAG_USERNAME ).setValue( username );
+        Log.d( TAG, "Creating user " + username + " (" + reference.getKey() + ")");
+        PlayerInfo info = new PlayerInfo( reference.getKey(), username );
+        reference.setValue( info );
     }
 
     public static DatabaseReference getPreferences( DatabaseReference reference,

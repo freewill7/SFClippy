@@ -21,6 +21,10 @@ public class DataProvider {
         this.resultsRef = resultsRef;
     }
 
+    public DatabaseReference getUser( String playerId ) {
+        return FirebaseHelper.getUser( usersRef, playerId ).getReference();
+    }
+
     public DatabaseReference getUsername( String playerId ) {
         return FirebaseHelper.getUser( usersRef, playerId ).getUsername();
     }

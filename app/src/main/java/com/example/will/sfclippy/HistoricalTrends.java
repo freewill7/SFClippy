@@ -1,20 +1,111 @@
 package com.example.will.sfclippy;
 
+import android.util.Pair;
+
 import com.example.will.sfclippy.models.BattleResult;
 import com.example.will.sfclippy.models.PlayerInfo;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by will on 22/08/2016.
  */
 public class HistoricalTrends {
-    private List<BattleResult> pastResults;
+    private Map<String,BattleCounter> playerToResults = new HashMap<>();
+    private Map<String,StringToResults> playerToCharResults = new HashMap<>();
+    private Map<BattleKey, BattleCounter> pastBattles = new HashMap<>();
+
     private int GENERAL_FACT_SCORE = 1;
     private int GENERAL_CHARACTER_FACT_SCORE = 2;
     private int GENERAL_BATTLE_SCORE = 3;
+
+    /**
+     * Information about group of battles.
+     */
+    private class BattleCounter {
+        private int wins = 0;
+        private int total = 0;
+
+        public BattleCounter( ) {
+            // nothing to do
+        }
+
+        /**
+         * Record a win for the player.
+         */
+        public void recordWin( ) {
+            wins++;
+            total++;
+        }
+
+        /**
+         * Record a loss for the player.
+         */
+        public void recordLoss( ) {
+            total++;
+        }
+
+        public int getWinPercentage( ) {
+            return wins * 100 / total;
+        }
+
+        public int getTotalBattles( ) {
+            return total;
+        }
+    }
+
+    /**
+     * Keeps track of wins by character.
+     */
+    private class StringToResults {
+        private Map<String,BattleCounter> stringToCharacter = new HashMap<>();
+
+        public StringToResults( ) {
+
+        }
+
+        public BattleCounter getBattleFor( String characterName ) {
+            BattleCounter counter = stringToCharacter.get( characterName );
+            if ( null == counter ) {
+                counter = new BattleCounter();
+                stringToCharacter.put( characterName, counter );
+            }
+            return counter;
+        }
+    }
+
+    private static final class BattleKey {
+        private final String p1Id;
+        private final String p1Player;
+        private final String p2Id;
+        private final String p2Player;
+
+        public BattleKey( String p1Id,
+                          String p1Player,
+                          String p2Id,
+                          String p2Player ) {
+            this.p1Id = p1Id;
+            this.p1Player = p1Player;
+            this.p2Id = p2Id;
+            this.p2Player = p2Player;
+        }
+
+        @Override
+        public boolean equals( Object other ) {
+            if ( other instanceof BattleKey ) {
+                BattleKey otherKey = (BattleKey) other;
+                return p1Id.equals(otherKey.p1Id) &&
+                        p1Player.equals(otherKey.p1Player) &&
+                        p2Id.equals(otherKey.p2Id) &&
+                        p2Player.equals(otherKey.p2Player);
+            }
+            return false;
+        }
+    }
 
     /**
      * Represents an interesting fact.
@@ -37,100 +128,63 @@ public class HistoricalTrends {
         }
     }
 
-    public HistoricalTrends( List<BattleResult> pastResults ) {
-        this.pastResults = pastResults;
+    public HistoricalTrends( ) {
+
     }
 
-    protected void addWinRatioFact(PlayerInfo p1Info,
-                                   List<Fact> facts ) {
-        int p1Count = 0;
-        int p2Count = 0;
-        for ( BattleResult result : pastResults ) {
-            if ( result.winnerId.equals(p1Info.playerId) ) {
-                p1Count++;
-            } else {
-                p2Count++;
-            }
-        }
-
-        int total = p1Count + p2Count;
-        int percent = (int) (100 * (float) p1Count / ((float) total));
-
-        String description =
-                p1Info.playerName + " has an overall win ratio of " + percent + "%"
-                + " (" + total + " battles)";
-        facts.add( new Fact(description, GENERAL_FACT_SCORE));
+    public String formatPastBattleWinner( PlayerInfo player,
+                                          int percent,
+                                          int totalBattles ) {
+        return "Previous results for this pairing favour " + player.playerName +
+                    " (" + percent + "% wins for " + totalBattles + ")";
     }
 
-    protected void addCharacterRatio( PlayerInfo playerInfo,
-                                      String character,
-                                      List<Fact> facts ) {
-        int wins = 0;
-        int losses = 0;
-        String playerId = playerInfo.playerId;
+    public String formatPastBattles( PlayerInfo player1,
+                                     PlayerInfo player2,
+                                     BattleCounter results ) {
+        int p1Percent = results.getWinPercentage();
+        int totalCounter = results.getTotalBattles();
 
-        for ( BattleResult result : pastResults ) {
-            if ( 0 == result.characterFor( playerId ).compareTo( character ) ) {
-                if ( 0 == result.winnerId.compareTo(playerId) ) {
-                    wins++;
-                } else {
-                    losses++;
-                }
-            }
-        }
-
-        if ( wins + losses > 0 ) {
-            int percent = (int) (100 * (((float) wins) / (float) (wins+losses)));
-            int battles = wins + losses;
-            String description =
-                    playerInfo.playerName + " has a " + percent + "% win ratio with "
-                    + character + " (" + battles + " battles)";
-            facts.add( new Fact(description, GENERAL_CHARACTER_FACT_SCORE));
-        }
-    }
-
-    private String formatWinner( String playerName, int winCount, int total ) {
-        int percent = (int) (100 * ((float) winCount / (float) total));
-        String description = "Previous results for this pairing favour " +
-                playerName + " (" + percent + "%)";
-        return description;
-    }
-
-    protected void addPastBattleRatio( PlayerInfo p1Info,
-                                       String p1Character,
-                                       PlayerInfo p2Info,
-                                       String p2Character,
-                                       List<Fact> facts ) {
-        int p1Count = 0;
-        int p2Count = 0;
-
-        String p1Id = p1Info.playerId;
-        String p2Id = p2Info.playerId;
-
-        for ( BattleResult result : pastResults ) {
-            if ( 0 == result.characterFor(p1Id).compareTo(p1Character)
-                    && 0 == result.characterFor(p2Id).compareTo(p2Character) ) {
-                if ( 0 == result.winnerId.compareTo(p1Id) ) {
-                    p1Count++;
-                } else if ( 0 == result.winnerId.compareTo(p2Id) ) {
-                    p2Count++;
-                }
-            }
-        }
-
-        int total = p1Count + p2Count;
-        if ( total > 0 ) {
-            String description = "Previous results for this pairing are even";
-            if ( p1Count > p2Count ) {
-                description = formatWinner( p1Info.playerName, p1Count, total );
-            } else if ( p2Count > p1Count ){
-                description = formatWinner( p2Info.playerName, p2Count, total );
-            }
-            description = description + " [" + total + " fights]";
-            facts.add( new Fact( description, GENERAL_BATTLE_SCORE ) );
+        if ( 50 == results.getWinPercentage() ) {
+            return "Previous results for this pairing are even (" +
+                    results.getTotalBattles() + " battles)";
+        } else if ( 50 < results.getWinPercentage() ) {
+            return formatPastBattleWinner( player2, (100-p1Percent), totalCounter );
         } else {
-            String description = "No previous results for this pairing";
-            facts.add( new Fact(description, GENERAL_BATTLE_SCORE));
+            return formatPastBattleWinner( player1, p1Percent, totalCounter );
+        }
+    }
+
+    private String formatCharacterStats( PlayerInfo playerInfo,
+                                         String playerChoice,
+                                         BattleCounter counter) {
+        String ret = playerInfo.playerName + " has a " + counter.getWinPercentage() + "% win ratio "
+                + "with " + playerChoice + " (" + counter.getTotalBattles() + " battles)";
+        return ret;
+    }
+
+    private void addCharacterStats( List<Fact> facts,
+                                    PlayerInfo player,
+                                    String playerChoice ) {
+        StringToResults playerChar = playerToCharResults.get(player.playerId);
+        if ( null != playerChar ) {
+            BattleCounter counter = playerChar.getBattleFor(playerChoice);
+            if ( counter.getTotalBattles() > 0 ) {
+                String info = formatCharacterStats( player, playerChoice, counter );
+                facts.add( new Fact(info, GENERAL_CHARACTER_FACT_SCORE));
+            }
+        }
+    }
+
+    private void addOverallStats( List<Fact> facts,
+                                  PlayerInfo player ) {
+        BattleCounter counter = playerToResults.get( player.playerId );
+        if ( null != counter ) {
+            int percent = counter.getWinPercentage();
+            int total = counter.getTotalBattles();
+            String ret =  player.playerName + " has an overall win ratio of " + percent + "%"
+                    + " (" + total + " battles)";
+            facts.add( new Fact(ret, GENERAL_FACT_SCORE));
         }
     }
 
@@ -141,15 +195,92 @@ public class HistoricalTrends {
                                      Date date ) {
         List<Fact> ret = new ArrayList<>();
 
-        if ( pastResults.size() > 0 ) {
-            addWinRatioFact( player1, ret );
-
-            addCharacterRatio( player1, player1Choice, ret );
-            addCharacterRatio( player2, player2Choice, ret );
-            addPastBattleRatio( player1, player1Choice, player2, player2Choice, ret );
-
+        // find previous stats for this battle
+        BattleKey key = new BattleKey( player1.playerId, player1Choice,
+                player2.playerId, player2Choice );
+        BattleCounter pastBattle = pastBattles.get(key);
+        if ( null != pastBattle && 0 < pastBattle.getTotalBattles() ) {
+            String info = formatPastBattles( player1, player2, pastBattle );
+            ret.add( new Fact(info, GENERAL_BATTLE_SCORE));
         }
 
+        // find character stats for player 1
+        addCharacterStats( ret, player1, player1Choice );
+
+        // find character status for player 2
+        addCharacterStats( ret, player2, player2Choice );
+
+        // overall stats for player 1
+        addOverallStats( ret, player1 );
+
+        // overally stats for player 2
+        addOverallStats( ret, player2 );
+
         return ret;
+    }
+
+    private void addGeneralResult( String playerId, BattleResult result ) {
+        BattleCounter overall = playerToResults.get( playerId );
+        if ( null == overall ) {
+            overall = new BattleCounter();
+            playerToResults.put( playerId, overall );
+        }
+
+        if ( result.winnerId.equals(playerId) ) {
+            overall.recordWin();
+        } else {
+            overall.recordLoss();
+        }
+    }
+
+    private void addByCharacterResult( String playerId, BattleResult result ) {
+        StringToResults characterMap = playerToCharResults.get( playerId );
+        if ( null == characterMap ) {
+            characterMap = new StringToResults();
+            playerToCharResults.put( playerId, characterMap );
+        }
+
+        BattleCounter counter = characterMap.getBattleFor( result.characterFor(playerId) );
+        if ( result.winnerId.equals(playerId) ) {
+            counter.recordWin();
+        } else {
+            counter.recordLoss();
+        }
+    }
+
+    private Pair<String,String> formPlayerPair( String p1Id, String p2Id ) {
+        if ( 0 < p1Id.compareTo(p2Id) ) {
+            return new Pair<>( p1Id, p2Id );
+        } else {
+            return new Pair<>( p2Id, p1Id );
+        }
+    }
+
+    private void addByBattleResult( String p1Id, String p2Id, BattleResult result ) {
+        BattleKey key = new BattleKey( p1Id, result.characterFor(p1Id),
+                p2Id, result.characterFor(p2Id) );
+
+        BattleCounter counter = pastBattles.get(key);
+        if ( null == counter ) {
+            counter = new BattleCounter();
+            pastBattles.put( key, counter );
+        }
+
+        if ( result.winnerId.equals(p1Id) ) {
+            counter.recordWin();
+        } else {
+            counter.recordLoss();
+        }
+    }
+
+    public void addBattle( BattleResult result ) {
+        addGeneralResult( result.p1Id, result );
+        addGeneralResult( result.p2Id, result );
+
+        addByCharacterResult( result.p1Id, result );
+        addByCharacterResult( result.p2Id, result );
+
+        addByBattleResult( result.p1Id, result.p2Id, result );
+        addByBattleResult( result.p2Id, result.p1Id, result );
     }
 }

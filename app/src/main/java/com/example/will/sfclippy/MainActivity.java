@@ -3,7 +3,6 @@ package com.example.will.sfclippy;
 import android.app.Activity;
 import android.app.ActivityOptions;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.widget.DrawerLayout;
@@ -20,13 +19,13 @@ import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
 import com.example.will.sfclippy.models.BattleResult;
-import com.example.will.sfclippy.models.CharacterPreference;
+import com.example.will.sfclippy.models.PlayerInfo;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -34,7 +33,7 @@ import java.util.Comparator;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
-implements View.OnClickListener {
+implements View.OnClickListener, FactsUpdateListener {
     private String player1Id;
     private String player2Id;
     private String p1Choice;
@@ -46,18 +45,11 @@ implements View.OnClickListener {
     private Snackbar p1Snackbar;
     private Snackbar p2Snackbar;
     private FactsListener factsListener;
-    private NameWatcher p1Watcher;
-    private NameWatcher p2Watcher;
-    private StringWrapper p1Name = new StringWrapper("p1");
-    private StringWrapper p2Name = new StringWrapper("p2");
-
-    public static class StringWrapper {
-        public String str;
-
-        public StringWrapper( String name ) {
-            this.str = name;
-        }
-    }
+    private PlayerWatcher p1Watcher;
+    private PlayerWatcher p2Watcher;
+    private HistoricalTrends trends = new HistoricalTrends();
+    private ResultsListener resultsListener = new ResultsListener(trends, this);
+    private static final String UNKNOWN = "unknown";
 
     private DatabaseReference p1User;
     private DatabaseReference p2User;
@@ -102,12 +94,14 @@ implements View.OnClickListener {
             if ( p1Preferences == v ) {
                 Intent intent = new Intent(parent, CharacterPreferenceActivity.class);
                 intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY, p1Id );
-                intent.putExtra( CharacterPreferenceActivity.TITLE_PROPERY, p1Name.str + " prefs" );
+                intent.putExtra( CharacterPreferenceActivity.TITLE_PROPERY,
+                        p1Watcher.getPlayerInfo().playerName + " prefs" );
                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
             } else if ( p2Preferences == v ) {
                 Intent intent = new Intent(parent, CharacterPreferenceActivity.class);
                 intent.putExtra( CharacterPreferenceActivity.PLAYER_ID_PROPERTY, p2Id );
-                intent.putExtra(CharacterPreferenceActivity.TITLE_PROPERY, p2Name.str + " prefs");
+                intent.putExtra(CharacterPreferenceActivity.TITLE_PROPERY,
+                        p2Watcher.getPlayerInfo().playerName + " prefs");
                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
             } else if ( results == v ) {
                 Intent intent = new Intent(parent, ResultsActivity.class);
@@ -119,6 +113,43 @@ implements View.OnClickListener {
             }
         }
     };
+
+    private static class ResultsListener implements ChildEventListener {
+        private HistoricalTrends trends;
+        private FactsUpdateListener listener;
+
+        public ResultsListener( HistoricalTrends trends, FactsUpdateListener listener ) {
+            this.trends = trends;
+            this.listener = listener;
+        }
+
+        @Override
+        public void onCancelled( DatabaseError error ) {
+            Log.e( TAG, "ResultsListener cancelled", error.toException());
+        }
+
+        @Override
+        public void onChildAdded( DataSnapshot snapshot, String childName ) {
+            BattleResult result = snapshot.getValue(BattleResult.class);
+            trends.addBattle(result);
+            listener.factsUpdated();
+        }
+
+        @Override
+        public void onChildChanged( DataSnapshot snapshot, String previousName ) {
+            // nothing
+        }
+
+        @Override
+        public void onChildMoved( DataSnapshot snapshot, String previousName ) {
+            // nothing
+        }
+
+        @Override
+        public void onChildRemoved( DataSnapshot snapshot ) {
+            // nothing
+        }
+    }
 
     private static class FactsListener implements View.OnClickListener {
         private int currentIndex = 0;
@@ -210,13 +241,10 @@ implements View.OnClickListener {
     }
 
     private List<HistoricalTrends.Fact> getBattleFacts( ) {
-        return new ArrayList<>();
-
-        /*
-        List<HistoricalTrends.Fact> facts = dataProvider.getHistoricalTrends().getBattleFacts(
-                dataProvider.getPlayerById( dataProvider.getPlayer1Id() ),
+        List<HistoricalTrends.Fact> facts = trends.getBattleFacts(
+                p1Watcher.getPlayerInfo(),
                 p1Choice,
-                dataProvider.getPlayerById( dataProvider.getPlayer2Id() ),
+                p2Watcher.getPlayerInfo(),
                 p2Choice,
                 Calendar.getInstance().getTime() );
 
@@ -229,7 +257,6 @@ implements View.OnClickListener {
         });
 
         return facts;
-        */
     }
 
     private void setupTextSwitcher( ) {
@@ -250,7 +277,8 @@ implements View.OnClickListener {
             }
         });
 
-        List<HistoricalTrends.Fact> facts = getBattleFacts();
+        List<HistoricalTrends.Fact> facts = new ArrayList<>();
+                //getBattleFacts();
 
         factsListener = new FactsListener( facts, switcher, previous, next );
         next.setOnClickListener(factsListener);
@@ -259,8 +287,8 @@ implements View.OnClickListener {
 
     private void checkButtons( ) {
         boolean enabled = true;
-        if ( 0 == p1Choice.compareTo("unknown")
-                || 0 == p2Choice.compareTo("unknown") ) {
+        if ( 0 == p1Choice.compareTo(UNKNOWN)
+                || 0 == p2Choice.compareTo(UNKNOWN) ) {
             enabled = false;
         }
 
@@ -271,36 +299,42 @@ implements View.OnClickListener {
     /**
      * Watches a username.
      */
-    public static class NameWatcher implements ValueEventListener {
+    public static class PlayerWatcher implements ValueEventListener {
         private TextView playerText;
         private Button playerWinButton;
         private Snackbar snackbar;
-        private StringWrapper nameRef;
+        private PlayerInfo playerInfo;
 
-        public NameWatcher( TextView playerText,
-                            Button playerWinButton,
-                            Snackbar snackbar,
-                            StringWrapper name ) {
+        public PlayerWatcher(TextView playerText,
+                             Button playerWinButton,
+                             Snackbar snackbar ) {
             this.playerText = playerText;
             this.playerWinButton = playerWinButton;
             this.snackbar = snackbar;
-            this.nameRef = name;
         }
 
         @Override
         public void onDataChange(DataSnapshot dataSnapshot) {
-            Log.d( "NameWatcher", "Received data change");
-            String name = dataSnapshot.getValue(String.class);
-
-            playerText.setText( name + " choice:" );
-            playerWinButton.setText( name + " win" );
-            snackbar.setText( "Recorded win for " + name );
-            this.nameRef.str = name;
+            Log.d( "PlayerWatcher", "Received data change");
+            if ( null == dataSnapshot ) {
+                Log.d(TAG, "Received player watcher null");
+            } else {
+                PlayerInfo info = dataSnapshot.getValue(PlayerInfo.class);
+                Log.d(TAG, "Received player name " + info.playerName);
+                playerInfo = info;
+                playerText.setText(info.playerName + " choice:");
+                playerWinButton.setText(info.playerName + " win");
+                snackbar.setText("Recorded win for " + info.playerName);
+            }
         }
 
         @Override
         public void onCancelled( DatabaseError databaseError ) {
             Log.e( TAG, "Database error", databaseError.toException() );
+        }
+
+        public PlayerInfo getPlayerInfo( ) {
+            return playerInfo;
         }
     }
 
@@ -345,8 +379,8 @@ implements View.OnClickListener {
                 "Recorded win for P2",
                 Snackbar.LENGTH_LONG );
 
-        p1Watcher = new NameWatcher( p1Text, p1Win, p1Snackbar, p1Name );
-        p2Watcher = new NameWatcher( p2Text, p2Win, p2Snackbar, p2Name );
+        p1Watcher = new PlayerWatcher( p1Text, p1Win, p1Snackbar );
+        p2Watcher = new PlayerWatcher( p2Text, p2Win, p2Snackbar );
 
         // get id associated with the battle
         // first from intent... then from saved instance state
@@ -362,16 +396,19 @@ implements View.OnClickListener {
         }
 
         DataProvider dataProvider = AppSingleton.getInstance().getDataProvider();
-        p1User = dataProvider.getUsername( player1Id );
+        p1User = dataProvider.getUser( player1Id );
         Log.d( TAG, "Red panda " + p1User.getParent().getParent().getKey()
                 + "/" + p1User.getParent().getKey()
                 + "/" + p1User.getKey() );
         p1User.addValueEventListener(p1Watcher);
-        p2User = dataProvider.getUsername( player2Id );
+        p2User = dataProvider.getUser( player2Id );
         Log.d( TAG, "Blue Goose " + p2User.getParent().getParent().getKey()
                 + "/" + p2User.getParent().getKey()
                 + "/" + p2User.getKey() );
         p2User.addValueEventListener(p2Watcher);
+
+        results = dataProvider.getResults();
+        results.addChildEventListener( resultsListener );
 
         p1Choice = "unknown";
         p2Choice = "unknown";
@@ -480,6 +517,14 @@ implements View.OnClickListener {
     public void onDestroy( ) {
         p1User.removeEventListener(p1Watcher);
         p2User.removeEventListener(p2Watcher);
+        results.removeEventListener(resultsListener);
         super.onDestroy();
+    }
+
+    @Override
+    public void factsUpdated( ) {
+        Log.d( TAG, "Facts updated" );
+        List<HistoricalTrends.Fact> facts = getBattleFacts();
+        factsListener.replaceFacts(facts);
     }
 }
