@@ -96,6 +96,20 @@ implements CharacterRatingFragment.RatingInteractionListener {
             orderer = new CharacterPreference.DescendingScore();
         }
 
+        void upgradeIfRequired( ArrayList<CharacterPreference> preferences ) {
+            boolean hasUrien = false;
+
+            for ( CharacterPreference pref : preferences ) {
+                if ( pref.name.equals("Urien") ) {
+                    hasUrien = true;
+                }
+            }
+
+            if ( ! hasUrien ) {
+                FirebaseHelper.storePreference(mPreferences, "Urien", 2, 0, 0 );
+            }
+        }
+
         @Override
         public void onDataChange(DataSnapshot snapshot) {
             if ( null == snapshot.getValue()) {
@@ -106,6 +120,9 @@ implements CharacterRatingFragment.RatingInteractionListener {
                 for ( DataSnapshot snap : snapshot.getChildren() ) {
                     preferences.add( snap.getValue(CharacterPreference.class) );
                 }
+
+                // perform upgrades (e.g. new character)
+                upgradeIfRequired( preferences );
 
                 // Sort appropriately
                 Collections.sort( preferences, orderer );
