@@ -2,6 +2,7 @@ package com.example.will.sfclippy;
 
 import android.util.Log;
 
+import com.example.will.sfclippy.models.BattleResult;
 import com.example.will.sfclippy.models.CharacterPreference;
 import com.example.will.sfclippy.models.PlayerInfo;
 import com.google.firebase.database.DatabaseReference;
@@ -45,11 +46,31 @@ public class FirebaseHelper {
         return reference.child( username );
     }
 
-    public static void storePreference( DatabaseReference preferences,
-                                        String name, int score ) {
-        CharacterPreference pref = new CharacterPreference( name, score );
+    public static DatabaseReference getCharacterPreference( DatabaseReference preferences,
+                                                            String character ) {
+        String key = characterKey(character);
+        return preferences.child(key);
+    }
+
+    private static String characterKey( String name ) {
         String key = name.toLowerCase().replaceAll( "[^\\p{Lower}]", "");
-        preferences.child(key).setValue(pref);
+        return key;
+    }
+
+    public static void storePreference( DatabaseReference preferences,
+                                        String name, int score,
+                                        int battles, int wins ) {
+        CharacterPreference pref = new CharacterPreference( name, score, battles, wins );
+        DatabaseReference character = getCharacterPreference(preferences, name);
+        character.setValue(pref);
+    }
+
+    public static void updateCharacterPreference( DatabaseReference preferences,
+                                                  String name,
+                                                  int score ) {
+        DatabaseReference character = getCharacterPreference(preferences, name);
+        DatabaseReference scoreRef = character.child("score");
+        scoreRef.setValue(score);
     }
 
     public static void initialisePreferences( DatabaseReference reference ) {
@@ -61,7 +82,13 @@ public class FirebaseHelper {
                 "Zangief", "Laura", "Dhalsim", "F.A.N.G.",
                 "Alex", "Guile", "Ibuki", "Balrog", "Juri" };
         for ( String character : characters ) {
-            storePreference( reference, character, defaultInt );
+            storePreference( reference, character, defaultInt, 0, 0 );
         }
+    }
+
+    public static void storeCharBattles(DatabaseReference reference,
+                                       HistoricalTrends.BattleCounter counter ) {
+        reference.child( "battles_fought" ).setValue( counter.getTotalBattles() );
+        reference.child( "battles_won" ).setValue( counter.getWonBattles() );
     }
 }

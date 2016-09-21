@@ -31,6 +31,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
 implements View.OnClickListener, FactsUpdateListener {
@@ -42,6 +43,7 @@ implements View.OnClickListener, FactsUpdateListener {
     private Button p2Button;
     private Button p1Win;
     private Button p2Win;
+    private Button regen;
     private Snackbar p1Snackbar;
     private Snackbar p2Snackbar;
     private FactsListener factsListener;
@@ -208,6 +210,7 @@ implements View.OnClickListener, FactsUpdateListener {
     private void setupDrawer( ) {
         Button btnBackup = (Button) findViewById(R.id.btnBackup);
         Button btnResults = (Button) findViewById(R.id.btnResults);
+        Button btnRegenerateStatistics = (Button) findViewById(R.id.btnRegenerateStats);
 
         MenuListener listener = new MenuListener( this,
                 btnResults,
@@ -346,6 +349,8 @@ implements View.OnClickListener, FactsUpdateListener {
         p1Win.setOnClickListener( this );
         p2Win = (Button) findViewById(R.id.btnWinP2);
         p2Win.setOnClickListener( this );
+        regen = (Button) findViewById(R.id.btnRegen);
+        regen.setOnClickListener( this );
 
         // set-up snackbar
         p1Snackbar = Snackbar.make( drawerLayout,
@@ -406,12 +411,6 @@ implements View.OnClickListener, FactsUpdateListener {
         // TODO loading screen
         Log.d( getLocalClassName(), "Recording win for " + winnerId );
 
-        BattleResult result = new BattleResult( Calendar.getInstance().getTime(),
-                player1Id,
-                p1Choice,
-                player2Id,
-                p2Choice,
-                winnerId );
 
         // set loading
         p1Win.setEnabled(false);
@@ -420,6 +419,15 @@ implements View.OnClickListener, FactsUpdateListener {
         DataProvider dataProvider = AppSingleton.getInstance().getDataProvider();
         DatabaseReference results = dataProvider.getResults();
         DatabaseReference child = results.push();
+
+        BattleResult result = new BattleResult( Calendar.getInstance().getTime(),
+                child.getKey(),
+                player1Id,
+                p1Choice,
+                player2Id,
+                p2Choice,
+                winnerId );
+
         child.setValue( result, new DatabaseReference.CompletionListener() {
             @Override
             public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
@@ -453,6 +461,8 @@ implements View.OnClickListener, FactsUpdateListener {
             recordWin(player1Id, p1Snackbar);
         } else if ( p2Win == v ) {
             recordWin(player2Id, p2Snackbar);
+        } else if ( regen == v ) {
+            regenerateFacts();
         } else {
             Toast t = Toast.makeText( v.getContext(), "Unknown button", Toast.LENGTH_SHORT );
             t.show();
@@ -502,5 +512,26 @@ implements View.OnClickListener, FactsUpdateListener {
         Log.d( TAG, "Facts updated" );
         List<HistoricalTrends.Fact> facts = getBattleFacts();
         factsListener.replaceFacts(facts);
+    }
+
+    public void regeneratePlayerStatistics( PlayerInfo info ) {
+        DataProvider provider =  AppSingleton.getInstance().getDataProvider();
+        DatabaseReference preferences = provider.getPreferences( info.playerId );
+
+        Map<String,HistoricalTrends.BattleCounter> charToResult =
+                trends.getPlayerCharacterStats( info );
+        for (Map.Entry<String,HistoricalTrends.BattleCounter> kv : charToResult.entrySet() ) {
+            String character = kv.getKey();
+            HistoricalTrends.BattleCounter counter = kv.getValue();
+
+            DatabaseReference charRef =
+                    FirebaseHelper.getCharacterPreference( preferences, character );
+            FirebaseHelper.storeCharBattles( charRef, counter );
+        }
+    }
+
+    public void regenerateFacts( ) {
+        regeneratePlayerStatistics( p1Watcher.playerInfo );
+        regeneratePlayerStatistics( p2Watcher.playerInfo );
     }
 }

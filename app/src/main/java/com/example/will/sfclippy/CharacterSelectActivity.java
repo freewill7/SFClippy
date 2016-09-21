@@ -57,27 +57,14 @@ implements CharacterRatingFragment.RatingInteractionListener {
             mRatingBar = (RatingBar) mView.findViewById(R.id.characterRatingBar);
             mTextView = (TextView) mView.findViewById(R.id.characterLabel);
 
-            // short click for select
+            // click to select
             mView.setClickable(true);
             mView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Intent resultData = new Intent();
-                    resultData.putExtra(GET_CHARACTER_PROPERTY, getCharacter().name );
-                    mActivity.setResult(Activity.RESULT_OK, resultData);
-                    mActivity.finish();
-                }
-            });
-
-            // long click for modify
-            mView.setLongClickable(true);
-            mView.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
                     CharacterRatingFragment frag = CharacterRatingFragment.newInstance(
-                            mCharacter.name, mCharacter.score );
+                            mCharacter.name, mCharacter.score, mCharacter.battles_fought, mCharacter.battles_won );
                     frag.show( mActivity.getFragmentManager(), "frame name" );
-                    return true;
                 }
             });
         }
@@ -234,6 +221,15 @@ implements CharacterRatingFragment.RatingInteractionListener {
 
     @Override
     public void onRatingChange( String character, int score ) {
-        FirebaseHelper.storePreference( mReference, character, score );
+        // just update the score
+        FirebaseHelper.updateCharacterPreference( mReference, character, score );
+    }
+
+    @Override
+    public void onCharacterSelected( String character ) {
+        Intent resultData = new Intent();
+        resultData.putExtra(GET_CHARACTER_PROPERTY, character );
+        this.setResult(Activity.RESULT_OK, resultData);
+        this.finish();
     }
 }

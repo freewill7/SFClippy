@@ -27,12 +27,17 @@ public class HistoricalTrends {
     /**
      * Information about group of battles.
      */
-    private class BattleCounter {
+    public class BattleCounter {
         private int wins = 0;
         private int total = 0;
 
         public BattleCounter( ) {
             // nothing to do
+        }
+
+        public BattleCounter( BattleCounter other ) {
+            this.wins = other.wins;
+            this.total = other.total;
         }
 
         /**
@@ -57,13 +62,15 @@ public class HistoricalTrends {
         public int getTotalBattles( ) {
             return total;
         }
+
+        public int getWonBattles( ) { return wins; }
     }
 
     /**
      * Keeps track of wins by character.
      */
     private class StringToResults {
-        private Map<String,BattleCounter> stringToCharacter = new HashMap<>();
+        public Map<String,BattleCounter> stringToCharacter = new HashMap<>();
 
         public StringToResults( ) {
 
@@ -173,16 +180,22 @@ public class HistoricalTrends {
         return ret;
     }
 
+    private BattleCounter lookupPlayerCharacter( PlayerInfo player, String playerChoice ) {
+        BattleCounter counter = new BattleCounter();
+        StringToResults playerChar = playerToCharResults.get(player.playerId);
+        if ( null != playerChar ) {
+            counter = playerChar.getBattleFor(playerChoice);
+        }
+        return counter;
+    }
+
     private void addCharacterStats( List<Fact> facts,
                                     PlayerInfo player,
                                     String playerChoice ) {
-        StringToResults playerChar = playerToCharResults.get(player.playerId);
-        if ( null != playerChar ) {
-            BattleCounter counter = playerChar.getBattleFor(playerChoice);
-            if ( counter.getTotalBattles() > 0 ) {
-                String info = formatCharacterStats( player, playerChoice, counter );
-                facts.add( new Fact(info, GENERAL_CHARACTER_FACT_SCORE));
-            }
+        BattleCounter counter = lookupPlayerCharacter( player, playerChoice );
+        if ( counter.getTotalBattles() > 0 ) {
+            String info = formatCharacterStats( player, playerChoice, counter );
+            facts.add( new Fact(info, GENERAL_CHARACTER_FACT_SCORE));
         }
     }
 
@@ -294,5 +307,14 @@ public class HistoricalTrends {
 
         addByBattleResult( result.p1Id, result.p2Id, result );
         addByBattleResult( result.p2Id, result.p1Id, result );
+    }
+
+    public Map<String,BattleCounter> getPlayerCharacterStats( PlayerInfo player ) {
+        StringToResults lookup = playerToCharResults.get( player.playerId );
+        Map<String,BattleCounter> ret = new HashMap<>();
+        if ( null != lookup ) {
+            ret = lookup.stringToCharacter;
+        }
+        return ret;
     }
 }
