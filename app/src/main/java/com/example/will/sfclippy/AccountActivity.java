@@ -54,6 +54,7 @@ implements GoogleApiClient.ConnectionCallbacks,
         intent.putExtra( MainActivity.PLAYER2_ID_LABEL, p2Id );
 
         startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
+        this.finish();
     }
 
     private void setupDataProvider( String userHome ) {
