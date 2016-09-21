@@ -13,6 +13,7 @@ import java.util.Date;
 @IgnoreExtraProperties
 public class BattleResult {
     public String date;
+    public String battleId;
     public String p1Id;
     public String p1Character;
     public String p2Id;
@@ -26,12 +27,14 @@ public class BattleResult {
     }
 
     public BattleResult( Date date,
+                         String battleId,
                          String p1Id,
                          String p1Character,
                          String p2Id,
                          String p2Character,
                          String winnerId ) {
         this.date = dateFormat.format(date);
+        this.battleId = battleId;
         this.p1Id = p1Id;
         this.p1Character = p1Character;
         this.p2Id = p2Id;

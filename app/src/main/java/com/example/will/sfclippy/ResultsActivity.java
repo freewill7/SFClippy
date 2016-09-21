@@ -88,6 +88,7 @@ implements ResultDialogFragment.ResultDialogListener {
     public static class ResultsAdapter extends RecyclerView.Adapter<ResultViewHolder>
     implements ValueEventListener {
         private Activity activity;
+        private DatabaseReference resultsRef;
         private List<BattleResult> results;
         private static SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM");
         private String p1Id;
@@ -100,11 +101,13 @@ implements ResultDialogFragment.ResultDialogListener {
          * Elements of the view.
          */
         public ResultsAdapter( Activity activity,
+                               DatabaseReference resultsRef,
                                String p1Id,
                                String p2Id,
                                Drawable p1Img,
                                Drawable p2Img ) {
             this.activity = activity;
+            this.resultsRef = resultsRef;
             this.results = new ArrayList<>();
             this.p1Id = p1Id;
             this.p2Id = p2Id;
@@ -154,8 +157,10 @@ implements ResultDialogFragment.ResultDialogListener {
          * @param itemIndex The item index to remove.
          */
         public void removeItem( int itemIndex ) {
-            results.remove(itemIndex);
-            notifyItemRemoved(itemIndex);
+            String battleId = results.get(itemIndex).battleId;
+            resultsRef.child(battleId).removeValue();
+            // results.remove(itemIndex);
+            // notifyItemRemoved(itemIndex);
         }
 
         @Override
@@ -219,7 +224,7 @@ implements ResultDialogFragment.ResultDialogListener {
 
         // fetch results to display
         mResults = mDataProvider.getResults();
-        mResultsAdapter = new ResultsAdapter( this, player1Id, player2Id, p1Img, p2Img );
+        mResultsAdapter = new ResultsAdapter( this, mResults, player1Id, player2Id, p1Img, p2Img );
         mResults.addValueEventListener(mResultsAdapter);
         listView.setAdapter(mResultsAdapter);
                 /*
@@ -266,25 +271,6 @@ implements ResultDialogFragment.ResultDialogListener {
         @Override
         public void onPostExecute( Void result ) {
             caller.finish();
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_results, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected( MenuItem item ) {
-        switch ( item.getItemId() ) {
-            case R.id.action_accept_results:
-                SaveResults results = new SaveResults(mDataProvider, this );
-                results.execute();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-
         }
     }
 

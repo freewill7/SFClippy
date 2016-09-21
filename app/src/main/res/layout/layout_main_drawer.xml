@@ -33,4 +33,12 @@
         style="@style/Widget.AppCompat.Button.Borderless"
         android:theme="@android:style/Theme.Material.Light" />
 
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/action_regenerate_stats"
+        android:id="@+id/btnRegenerateStats"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:theme="@android:style/Theme.Material.Light" />
+
 </LinearLayout>
