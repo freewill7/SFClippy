@@ -218,21 +218,24 @@ public class HistoricalTrends {
                                      Date date ) {
         List<Fact> ret = new ArrayList<>();
 
-        // find previous stats for this battle
         Log.d( "HistoricalTrends", "Fetching from " + pastBattles.size());
-        BattleKey key = new BattleKey( player1.playerId, player1Choice,
-                player2.playerId, player2Choice );
-        BattleCounter pastBattle = pastBattles.get(key);
-        if ( null != pastBattle && pastBattle.getTotalBattles() > 0 ) {
-            String info = formatPastBattles( player1, player2, pastBattle );
-            ret.add( new Fact(info, GENERAL_BATTLE_SCORE));
+
+        // find previous stats for this battle
+        if ( ! player1Choice.equals("unknown") && ! player2Choice.equals("unknown") ) {
+            BattleKey key = new BattleKey(player1.playerId, player1Choice,
+                    player2.playerId, player2Choice);
+            BattleCounter pastBattle = pastBattles.get(key);
+            if (null != pastBattle && pastBattle.getTotalBattles() > 0) {
+                String info = formatPastBattles(player1, player2, pastBattle);
+                ret.add(new Fact(info, GENERAL_BATTLE_SCORE));
+            }
+
+            // find character stats for player 1
+            addCharacterStats(ret, player1, player1Choice);
+
+            // find character status for player 2
+            addCharacterStats(ret, player2, player2Choice);
         }
-
-        // find character stats for player 1
-        addCharacterStats( ret, player1, player1Choice );
-
-        // find character status for player 2
-        addCharacterStats( ret, player2, player2Choice );
 
         // overall stats for player 1
         addOverallStats( ret, player1 );
