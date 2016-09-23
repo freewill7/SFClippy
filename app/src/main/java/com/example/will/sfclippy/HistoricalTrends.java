@@ -204,9 +204,10 @@ public class HistoricalTrends {
         BattleCounter counter = playerToResults.get( player.playerId );
         if ( null != counter ) {
             int percent = counter.getWinPercentage();
+            int wins = counter.getWonBattles();
             int total = counter.getTotalBattles();
             String ret =  player.playerName + " has an overall win ratio of " + percent + "%"
-                    + " (" + total + " battles)";
+                    + " (" + wins + " wins from " + total + " battles)";
             facts.add( new Fact(ret, GENERAL_FACT_SCORE));
         }
     }
