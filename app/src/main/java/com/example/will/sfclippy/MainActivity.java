@@ -24,47 +24,46 @@ import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
 implements View.OnClickListener, FactsUpdateListener {
+    private DrawerLayout mainView;
+    private String accountId;
     private String player1Id;
     private String player2Id;
-    private String p1Choice;
-    private String p2Choice;
+    private String p1Choice = "unknown";
+    private String p2Choice = "unknown";
     private Button p1Button;
     private Button p2Button;
     private Button p1Win;
     private Button p2Win;
     private Button regen;
-    private Snackbar p1Snackbar;
-    private Snackbar p2Snackbar;
     private FactsListener factsListener;
-    private PlayerWatcher p1Watcher;
-    private PlayerWatcher p2Watcher;
+    private StringRefWatcher p1Watcher = new StringRefWatcher();
+    private StringRefWatcher p2Watcher = new StringRefWatcher();
     private HistoricalTrends trends = new HistoricalTrends();
-    private ResultsListener resultsListener = new ResultsListener(trends, this);
-    private static final String UNKNOWN = "unknown";
-
-    private DatabaseReference p1User;
-    private DatabaseReference p2User;
-    private DatabaseReference results;
+    private static final String UNKNOWN_CHOICE = "unknown";
+    private DatabaseHelper helper;
 
     static public final int GET_P1_CHARACTER = 1;
     static public final int GET_P2_CHARACTER = 2;
     static public final int DO_BACKUP = 3;
 
+    public final static String ACCOUNT_ID_LABEL = "account_id";
     public final static String PLAYER1_ID_LABEL = "player1_id";
     public final static String PLAYER2_ID_LABEL = "player2_id";
 
     private final static String TAG = "MainActivity";
+
+    private DatabaseReference p1NameRef;
+    private DatabaseReference p2NameRef;
 
     private class MenuListener implements View.OnClickListener {
         private final Activity parent;
@@ -89,6 +88,7 @@ implements View.OnClickListener, FactsUpdateListener {
         public void onClick( View v ) {
              if ( results == v ) {
                 Intent intent = new Intent(parent, ResultsActivity.class);
+                 intent.putExtra( ResultsActivity.ACCOUNT_ID, accountId );
                 intent.putExtra( ResultsActivity.P1_ID, p1Id );
                 intent.putExtra( ResultsActivity.P2_ID, p2Id );
                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
@@ -97,43 +97,6 @@ implements View.OnClickListener, FactsUpdateListener {
             }
         }
     };
-
-    private static class ResultsListener implements ChildEventListener {
-        private HistoricalTrends trends;
-        private FactsUpdateListener listener;
-
-        public ResultsListener( HistoricalTrends trends, FactsUpdateListener listener ) {
-            this.trends = trends;
-            this.listener = listener;
-        }
-
-        @Override
-        public void onCancelled( DatabaseError error ) {
-            Log.e( TAG, "ResultsListener cancelled", error.toException());
-        }
-
-        @Override
-        public void onChildAdded( DataSnapshot snapshot, String childName ) {
-            BattleResult result = snapshot.getValue(BattleResult.class);
-            trends.addBattle(result);
-            listener.factsUpdated();
-        }
-
-        @Override
-        public void onChildChanged( DataSnapshot snapshot, String previousName ) {
-            // nothing
-        }
-
-        @Override
-        public void onChildMoved( DataSnapshot snapshot, String previousName ) {
-            // nothing
-        }
-
-        @Override
-        public void onChildRemoved( DataSnapshot snapshot ) {
-            // nothing
-        }
-    }
 
     private static class FactsListener implements View.OnClickListener {
         private int currentIndex = 0;
@@ -203,14 +166,10 @@ implements View.OnClickListener, FactsUpdateListener {
         }
     }
 
-    private String labelPreferences( String playerName ) {
-        return playerName + " prefs";
-    }
-
     private void setupDrawer( ) {
         Button btnBackup = (Button) findViewById(R.id.btnBackup);
         Button btnResults = (Button) findViewById(R.id.btnResults);
-        Button btnRegenerateStatistics = (Button) findViewById(R.id.btnRegenerateStats);
+        // Button btnRegenerateStatistics = (Button) findViewById(R.id.btnRegenerateStats);
 
         MenuListener listener = new MenuListener( this,
                 btnResults,
@@ -220,6 +179,8 @@ implements View.OnClickListener, FactsUpdateListener {
     }
 
     private List<HistoricalTrends.Fact> getBattleFacts( ) {
+        return new ArrayList<HistoricalTrends.Fact>();
+        /*
         List<HistoricalTrends.Fact> facts = trends.getBattleFacts(
                 p1Watcher.getPlayerInfo(),
                 p1Choice,
@@ -235,7 +196,7 @@ implements View.OnClickListener, FactsUpdateListener {
             }
         });
 
-        return facts;
+        return facts;]*/
     }
 
     private void setupTextSwitcher( ) {
@@ -266,8 +227,8 @@ implements View.OnClickListener, FactsUpdateListener {
 
     private void checkButtons( ) {
         boolean enabled = true;
-        if ( 0 == p1Choice.compareTo(UNKNOWN)
-                || 0 == p2Choice.compareTo(UNKNOWN) ) {
+        if ( 0 == p1Choice.compareTo(UNKNOWN_CHOICE)
+                || 0 == p2Choice.compareTo(UNKNOWN_CHOICE) ) {
             enabled = false;
         }
 
@@ -275,52 +236,11 @@ implements View.OnClickListener, FactsUpdateListener {
         p2Win.setEnabled(enabled);
     }
 
-    /**
-     * Watches a username.
-     */
-    public static class PlayerWatcher implements ValueEventListener {
-        private TextView playerText;
-        private Button playerWinButton;
-        private Snackbar snackbar;
-        private PlayerInfo playerInfo;
-
-        public PlayerWatcher(TextView playerText,
-                             Button playerWinButton,
-                             Snackbar snackbar ) {
-            this.playerText = playerText;
-            this.playerWinButton = playerWinButton;
-            this.snackbar = snackbar;
-        }
-
-        @Override
-        public void onDataChange(DataSnapshot dataSnapshot) {
-            Log.d( "PlayerWatcher", "Received data change");
-            if ( null == dataSnapshot ) {
-                Log.d(TAG, "Received player watcher null");
-            } else {
-                PlayerInfo info = dataSnapshot.getValue(PlayerInfo.class);
-                Log.d(TAG, "Received player name " + info.playerName);
-                playerInfo = info;
-                playerText.setText(info.playerName + " choice:");
-                playerWinButton.setText(info.playerName + " win");
-                snackbar.setText("Recorded win for " + info.playerName);
-            }
-        }
-
-        @Override
-        public void onCancelled( DatabaseError databaseError ) {
-            Log.e( TAG, "Database error", databaseError.toException() );
-        }
-
-        public PlayerInfo getPlayerInfo( ) {
-            return playerInfo;
-        }
-    }
-
     @Override
     protected void onSaveInstanceState( Bundle outState  ) {
         Log.d( TAG, "Saving state" );
         super.onSaveInstanceState( outState );
+        outState.putString( ACCOUNT_ID_LABEL, accountId );
         outState.putString( PLAYER1_ID_LABEL, player1Id );
         outState.putString( PLAYER2_ID_LABEL, player2Id );
     }
@@ -335,11 +255,11 @@ implements View.OnClickListener, FactsUpdateListener {
         setSupportActionBar(myToolbar);
         getSupportActionBar().setTitle( getString( R.string.app_name) );
 
-        DrawerLayout drawerLayout = (DrawerLayout) findViewById( R.id.mainDrawerLayout );
+        mainView = (DrawerLayout) findViewById( R.id.mainDrawerLayout );
 
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle( this, drawerLayout,
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle( this, mainView,
                 myToolbar, R.string.drawer_open, R.string.drawer_close );
-        drawerLayout.addDrawerListener(toggle);
+        mainView.addDrawerListener(toggle);
         toggle.syncState();
 
         // set-up buttons
@@ -352,20 +272,16 @@ implements View.OnClickListener, FactsUpdateListener {
         regen = (Button) findViewById(R.id.btnRegen);
         regen.setOnClickListener( this );
 
-        // set-up snackbar
-        p1Snackbar = Snackbar.make( drawerLayout,
-                "Recorded win for P1",
-                Snackbar.LENGTH_LONG );
-        p2Snackbar = Snackbar.make( drawerLayout,
-                "Recorded win for P2",
-                Snackbar.LENGTH_LONG );
-
-        p1Watcher = new PlayerWatcher( p1Text, p1Win, p1Snackbar );
-        p2Watcher = new PlayerWatcher( p2Text, p2Win, p2Snackbar );
+        // set up views that show player name
+        p1Watcher.registerTextView( p1Text, "%s choice:");
+        p1Watcher.registerTextView( p1Win, "%s win" );
+        p2Watcher.registerTextView( p2Text, "%s choice:");
+        p2Watcher.registerTextView( p2Win, "%s win" );
 
         // get id associated with the battle
         // first from intent... then from saved instance state
         Intent intent = getIntent();
+        accountId = intent.getStringExtra( ACCOUNT_ID_LABEL );
         player1Id = intent.getStringExtra( PLAYER1_ID_LABEL );
         player2Id = intent.getStringExtra( PLAYER2_ID_LABEL );
         if ( null == player1Id || null == player2Id ) {
@@ -376,23 +292,11 @@ implements View.OnClickListener, FactsUpdateListener {
             }
         }
 
-        DataProvider dataProvider = AppSingleton.getInstance().getDataProvider();
-        p1User = dataProvider.getUser( player1Id );
-        Log.d( TAG, "Red panda " + p1User.getParent().getParent().getKey()
-                + "/" + p1User.getParent().getKey()
-                + "/" + p1User.getKey() );
-        p1User.addValueEventListener(p1Watcher);
-        p2User = dataProvider.getUser( player2Id );
-        Log.d( TAG, "Blue Goose " + p2User.getParent().getParent().getKey()
-                + "/" + p2User.getParent().getKey()
-                + "/" + p2User.getKey() );
-        p2User.addValueEventListener(p2Watcher);
-
-        results = dataProvider.getResults();
-        results.addChildEventListener( resultsListener );
-
-        p1Choice = "unknown";
-        p2Choice = "unknown";
+        helper = new DatabaseHelper( FirebaseDatabase.getInstance(), accountId);
+        p1NameRef = helper.getPlayerNameRef( player1Id );
+        p1NameRef.addValueEventListener( p1Watcher );
+        p2NameRef = helper.getPlayerNameRef( player2Id );
+        p2NameRef.addValueEventListener( p2Watcher );
 
         setupTextSwitcher();
 
@@ -407,35 +311,27 @@ implements View.OnClickListener, FactsUpdateListener {
         setupDrawer();
     }
 
-    private void recordWin(String winnerId, final Snackbar notify ) {
+    private void recordWin(String winnerId, String winnerName ) {
         // TODO loading screen
         Log.d( getLocalClassName(), "Recording win for " + winnerId );
 
+        final Snackbar notify = Snackbar.make( mainView,
+                "Recorded win for " + winnerName,
+                Snackbar.LENGTH_LONG );
 
         // set loading
         p1Win.setEnabled(false);
         p2Win.setEnabled(false);
 
-        DataProvider dataProvider = AppSingleton.getInstance().getDataProvider();
-        DatabaseReference results = dataProvider.getResults();
-        DatabaseReference child = results.push();
-
-        BattleResult result = new BattleResult( Calendar.getInstance().getTime(),
-                child.getKey(),
-                player1Id,
-                p1Choice,
-                player2Id,
-                p2Choice,
-                winnerId );
-
-        child.setValue( result, new DatabaseReference.CompletionListener() {
-            @Override
-            public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
-                p1Win.setEnabled(true);
-                p2Win.setEnabled(true);
-
-                notify.show();
-            }
+        helper.storeResult( player1Id, p1Choice, player2Id, p2Choice, winnerId,
+                new DatabaseReference.CompletionListener() {
+                    @Override
+                    public void onComplete(DatabaseError databaseError,
+                                           DatabaseReference databaseReference) {
+                        p1Win.setEnabled(true);
+                        p2Win.setEnabled(true);
+                        notify.show();
+                    }
         });
     }
 
@@ -444,6 +340,7 @@ implements View.OnClickListener, FactsUpdateListener {
         if ( p1Button == v ) {
             Intent intent = new Intent(this, CharacterSelectActivity.class);
 
+            intent.putExtra( CharacterSelectActivity.ACCOUNT_ID, accountId );
             intent.putExtra( CharacterSelectActivity.PLAYER_ID, player1Id );
             intent.putExtra( CharacterSelectActivity.TITLE, "Choose player 1");
 
@@ -452,15 +349,16 @@ implements View.OnClickListener, FactsUpdateListener {
         } else if ( p2Button == v ) {
             Intent intent = new Intent(this, CharacterSelectActivity.class);
 
+            intent.putExtra( CharacterSelectActivity.ACCOUNT_ID, accountId );
             intent.putExtra( CharacterSelectActivity.PLAYER_ID, player2Id );
             intent.putExtra( CharacterSelectActivity.TITLE, "Choose player 2");
 
             startActivityForResult(intent, GET_P2_CHARACTER,
                     ActivityOptions.makeSceneTransitionAnimation(this).toBundle() );
         } else if ( p1Win == v ) {
-            recordWin(player1Id, p1Snackbar);
+            recordWin(player1Id, p1Watcher.getValue());
         } else if ( p2Win == v ) {
-            recordWin(player2Id, p2Snackbar);
+            recordWin(player2Id, p2Watcher.getValue());
         } else if ( regen == v ) {
             regenerateFacts();
         } else {
@@ -501,9 +399,8 @@ implements View.OnClickListener, FactsUpdateListener {
 
     @Override
     public void onDestroy( ) {
-        p1User.removeEventListener(p1Watcher);
-        p2User.removeEventListener(p2Watcher);
-        results.removeEventListener(resultsListener);
+        p1NameRef.removeEventListener(p1Watcher);
+        p2NameRef.removeEventListener(p2Watcher);
         super.onDestroy();
     }
 
@@ -514,24 +411,8 @@ implements View.OnClickListener, FactsUpdateListener {
         factsListener.replaceFacts(facts);
     }
 
-    public void regeneratePlayerStatistics( PlayerInfo info ) {
-        DataProvider provider =  AppSingleton.getInstance().getDataProvider();
-        DatabaseReference preferences = provider.getPreferences( info.playerId );
-
-        Map<String,HistoricalTrends.BattleCounter> charToResult =
-                trends.getPlayerCharacterStats( info );
-        for (Map.Entry<String,HistoricalTrends.BattleCounter> kv : charToResult.entrySet() ) {
-            String character = kv.getKey();
-            HistoricalTrends.BattleCounter counter = kv.getValue();
-
-            DatabaseReference charRef =
-                    FirebaseHelper.getCharacterPreference( preferences, character );
-            FirebaseHelper.storeCharBattles( charRef, counter );
-        }
-    }
-
     public void regenerateFacts( ) {
-        regeneratePlayerStatistics( p1Watcher.playerInfo );
-        regeneratePlayerStatistics( p2Watcher.playerInfo );
+        //regeneratePlayerStatistics( p1Watcher.playerInfo );
+        // regeneratePlayerStatistics( p2Watcher.playerInfo );
     }
 }

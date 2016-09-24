@@ -15,8 +15,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
@@ -24,6 +22,7 @@ import com.example.will.sfclippy.models.CharacterPreference;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -34,8 +33,11 @@ import java.util.List;
 public class CharacterSelectActivity extends AppCompatActivity
 implements CharacterRatingFragment.RatingInteractionListener {
     static public final String GET_CHARACTER_PROPERTY = "choice";
+    static public final String ACCOUNT_ID = "account_id";
     static public final String PLAYER_ID = "player_id";
     static public final String TITLE = "title";
+    private String playerId;
+    private DatabaseHelper helper;
     private RecyclerView listView;
     private MySelectAdapter mAdapter;
     private DatabaseReference mReference;
@@ -80,17 +82,20 @@ implements CharacterRatingFragment.RatingInteractionListener {
     public static class MySelectAdapter extends RecyclerView.Adapter<ViewHolder>
     implements ValueEventListener {
         private List<CharacterPreference> mDataset = new ArrayList<>();
-        private DatabaseReference mPreferences;
         private Activity mActivity;
+        private String mPlayerId;
+        private DatabaseHelper mHelper;
         private int defaultItemId;
         private static final String TAG = "MySelectAdapter";
         private Comparator<CharacterPreference> orderer;
         private RandomSelector selector = new RandomSelector();
 
         public MySelectAdapter( Activity activity,
-                                DatabaseReference preferences ) {
+                                String playerId,
+                                DatabaseHelper helper ) {
             mActivity = activity;
-            mPreferences = preferences;
+            mPlayerId = playerId;
+            mHelper = helper;
             defaultItemId = -1;
 
             orderer = new CharacterPreference.DescendingScore();
@@ -106,7 +111,7 @@ implements CharacterRatingFragment.RatingInteractionListener {
             }
 
             if ( ! hasUrien ) {
-                FirebaseHelper.storePreference(mPreferences, "Urien", 2, 0, 0 );
+                mHelper.addCharacterPref( mPlayerId, "Urien" );
             }
         }
 
@@ -114,7 +119,7 @@ implements CharacterRatingFragment.RatingInteractionListener {
         public void onDataChange(DataSnapshot snapshot) {
             if ( null == snapshot.getValue()) {
                 // bootstrap preferences
-                FirebaseHelper.initialisePreferences(mPreferences);
+                mHelper.bootstrapCharacterPrefs( mPlayerId );
             } else {
                 ArrayList<CharacterPreference> preferences = new ArrayList<>();
                 for ( DataSnapshot snap : snapshot.getChildren() ) {
@@ -189,18 +194,19 @@ implements CharacterRatingFragment.RatingInteractionListener {
         setContentView(R.layout.activity_character_select);
 
         Intent intent = getIntent();
-        String playerId = intent.getStringExtra( PLAYER_ID );
+        String accountId = intent.getStringExtra( ACCOUNT_ID );
+        playerId = intent.getStringExtra( PLAYER_ID );
         String title = intent.getStringExtra( TITLE );
 
-        DataProvider dataProvider = AppSingleton.getInstance().getDataProvider();
+        helper = new DatabaseHelper( FirebaseDatabase.getInstance(), accountId );
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
         setSupportActionBar(myToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         getSupportActionBar().setTitle( title );
 
-        mReference = dataProvider.getPreferences( playerId );
-        mAdapter = new MySelectAdapter( this, mReference );
+        mReference = helper.getPlayerPrefsRef( playerId );
+        mAdapter = new MySelectAdapter( this, playerId, helper );
         mReference.addValueEventListener( mAdapter );
 
         this.listView = (RecyclerView) findViewById( R.id.characterList );
@@ -239,7 +245,7 @@ implements CharacterRatingFragment.RatingInteractionListener {
     @Override
     public void onRatingChange( String character, int score ) {
         // just update the score
-        FirebaseHelper.updateCharacterPreference( mReference, character, score );
+        helper.updateCharacterScore( playerId, character, score );
     }
 
     @Override

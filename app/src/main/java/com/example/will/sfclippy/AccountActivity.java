@@ -46,10 +46,11 @@ implements GoogleApiClient.ConnectionCallbacks,
 
     private TextView progressLabel;
 
-    private void launchMainActivity( String p1Id, String p2Id ) {
+    private void launchMainActivity( String accountId, String p1Id, String p2Id ) {
         Log.d( TAG, "Launch Main activity " + p1Id + " " + p2Id );
 
         Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra( MainActivity.ACCOUNT_ID_LABEL, accountId );
         intent.putExtra( MainActivity.PLAYER1_ID_LABEL, p1Id );
         intent.putExtra( MainActivity.PLAYER2_ID_LABEL, p2Id );
 
@@ -57,48 +58,18 @@ implements GoogleApiClient.ConnectionCallbacks,
         this.finish();
     }
 
-    private void setupDataProvider( String userHome ) {
+    private void setupDataProvider( DatabaseHelper helper ) {
         Log.d( TAG, "Setting up data provider" );
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        final String accountId = helper.getAccountId();
 
-        DatabaseReference home = database.getReference( userHome );
-        final DatabaseReference users = home.child( "players" );
-        DatabaseReference preferences = home.child( "preferences" );
-        DatabaseReference results = home.child( "results" );
-
-        DataProvider provider = new DataProvider( users, preferences, results );
-        AppSingleton.getInstance().setDataProvider(provider);
-
-        users.addValueEventListener(new ValueEventListener() {
+        helper.fetchOrInitialisePlayers(new DatabaseHelper.PlayersCallback() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                users.removeEventListener(this);
-                if ( null == dataSnapshot.getValue() ) {
-                    Log.d( TAG, "Bootstrapping users");
-                    DatabaseReference p1 = users.push();
-                    FirebaseHelper.initialiseUser( p1, "Red Panda");
-
-                    DatabaseReference p2 = users.push();
-                    FirebaseHelper.initialiseUser( p2, "Blue Goose");
-
-                    launchMainActivity( p1.getKey(), p2.getKey() );
-                } else {
-                    Log.d( TAG, "Fetching users");
-                    List<String> playerIds = new ArrayList<>();
-                    for ( DataSnapshot child : dataSnapshot.getChildren() ) {
-                        playerIds.add( child.getKey() );
-                    }
-
-                    launchMainActivity( playerIds.get(0), playerIds.get(1));
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                Log.w( TAG, "Cancelled", databaseError.toException() );
+            public void playersInitialised(String p1Id, String p2Id) {
+                launchMainActivity( accountId, p1Id, p2Id );
             }
         });
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -130,8 +101,9 @@ implements GoogleApiClient.ConnectionCallbacks,
                         Log.d(TAG, "onAuthStateChanged: signed_in: " + user.getUid());
                         bootstrapComplete = true;
 
-                        String userHome = "/users/" + user.getUid();
-                        setupDataProvider(userHome);
+                        FirebaseDatabase database = FirebaseDatabase.getInstance();
+                        DatabaseHelper helper = new DatabaseHelper( database, user.getUid() );
+                        setupDataProvider(helper);
                     } else {
                         Log.d(TAG, "bootstrap already in progress");
                     }

@@ -24,6 +24,7 @@ import com.example.will.sfclippy.models.BattleResult;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.io.IOException;
@@ -39,9 +40,9 @@ import java.util.List;
  */
 public class ResultsActivity extends AppCompatActivity
 implements ResultDialogFragment.ResultDialogListener {
+    private DatabaseHelper mHelper;
     private ResultsAdapter mResultsAdapter;
-    private DataProvider mDataProvider;
-    private static final int REQUEST_SAVE_RESULTS = 1001;
+    public static final String ACCOUNT_ID = "account_id";
     public static final String P1_ID = "player1_id";
     public static final String P2_ID = "player2_id";
     private static final String TAG = "ResultsActivity";
@@ -209,12 +210,12 @@ implements ResultDialogFragment.ResultDialogListener {
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         listView.setLayoutManager(layoutManager);
 
-        mDataProvider = AppSingleton.getInstance().getDataProvider();
-
         Intent intent = getIntent();
+        String accountId = intent.getStringExtra(ACCOUNT_ID);
         String player1Id = intent.getStringExtra(P1_ID);
         String player2Id = intent.getStringExtra(P2_ID);
 
+        mHelper = new DatabaseHelper( FirebaseDatabase.getInstance(), accountId );
 
         // TODO update based on actual names
         TextDrawable p1Img = TextDrawable.builder()
@@ -223,55 +224,15 @@ implements ResultDialogFragment.ResultDialogListener {
                 .buildRound( "B", Color.BLUE );
 
         // fetch results to display
-        mResults = mDataProvider.getResults();
+        mResults = mHelper.getResultsDirReference();
         mResultsAdapter = new ResultsAdapter( this, mResults, player1Id, player2Id, p1Img, p2Img );
         mResults.addValueEventListener(mResultsAdapter);
         listView.setAdapter(mResultsAdapter);
-                /*
-        List<DataProvider.BattleResult> results = mDataProvider.getCurrentPlayerResults();
-        Collections.sort(results, new Comparator<DataProvider.BattleResult>() {
-            @Override
-            public int compare(DataProvider.BattleResult lhs, DataProvider.BattleResult rhs) {
-                // descending date/time order
-                return rhs.getDate().compareTo(lhs.getDate());
-            }
-        });
-        */
-        // create adapter
-
     }
 
     @Override
     public void removeItem( int itemIndex ) {
         mResultsAdapter.removeItem(itemIndex);
-    }
-
-    private static class SaveResults extends AsyncTask<Void,String,Void> {
-        private DataProvider dataProvider;
-        private Activity caller;
-
-        public SaveResults( DataProvider dataProvider,
-                            Activity caller ) {
-            this.dataProvider = dataProvider;
-            this.caller = caller;
-        }
-
-        @Override
-        public Void doInBackground( Void ... params ) {
-            // TODO progress and animation
-            try {
-                dataProvider.saveResults();
-            } catch ( IOException ioe ) {
-                cancel(true);
-            }
-
-            return null;
-        }
-
-        @Override
-        public void onPostExecute( Void result ) {
-            caller.finish();
-        }
     }
 
     @Override
