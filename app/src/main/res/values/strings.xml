@@ -12,7 +12,7 @@
     <string name="action_p2_preferences">P2 Preferences</string>
     <string name="action_results">View Results</string>
     <string name="action_backup">Backup Data</string>
-    <string name="action_regenerate_stats">Backup Data</string>
+    <string name="action_regenerate_stats">Regenerate Statistics</string>
 
 
     <string name="action_p1_win">Player 1 Win</string>

@@ -2,6 +2,7 @@ package com.example.will.sfclippy;
 
 import android.util.Log;
 
+import com.example.will.sfclippy.models.BattleCounter;
 import com.example.will.sfclippy.models.BattleResult;
 import com.example.will.sfclippy.models.CharacterPreference;
 import com.google.firebase.database.DataSnapshot;
@@ -12,7 +13,9 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by will on 24/09/2016.
@@ -155,5 +158,102 @@ public class DatabaseHelper {
     public void addCharacterPref( String playerId, String characterName ) {
         DatabaseReference character = getCharacterPreference( playerId, characterName);
         createCharacter( character, characterName );
+    }
+
+    private Map<String,BattleCounter> getPlayerMap( Map<String, Map<String,BattleCounter>> map,
+                                                   String playerId ) {
+        Map<String,BattleCounter> rv = map.get( playerId );
+        if ( null == rv ) {
+            rv = new HashMap<>();
+            map.put( playerId, rv );
+        }
+        return rv;
+    }
+
+    private BattleCounter getCharacterResults( Map<String,BattleCounter> map, String character ) {
+        BattleCounter rv = map.get(character);
+        if ( null == rv ) {
+            rv = new BattleCounter();
+            map.put( character, rv );
+        }
+        return rv;
+    }
+
+    private void updateResults( BattleCounter p1Result, String p1Id,
+                                BattleCounter p2Result, String p2Id,
+                                BattleResult result ) {
+        if ( result.winnerId.equals(p1Id)) {
+            p1Result.recordWin();
+            p2Result.recordLoss();
+        } else {
+            p1Result.recordLoss();
+            p2Result.recordWin();
+        }
+    }
+
+    public DatabaseReference getCharacterPreferenceWins( String playerId, String charName ) {
+        return getCharacterPreference(playerId, charName).child( "battles_won" );
+    }
+
+    public DatabaseReference getCharacterPreferenceBattles( String playerId, String charName ) {
+        return getCharacterPreference(playerId, charName).child( "battles_fought" );
+    }
+
+    private void doRegenerate( List<BattleResult> results, StatisticsCompleteListener listener ) {
+
+        // analyse results
+        Map<String, Map<String,BattleCounter>> playerCharacterCounter = new HashMap<>();
+        for ( BattleResult result : results ) {
+            Map<String,BattleCounter> p1Chars = getPlayerMap( playerCharacterCounter, result.p1Id );
+            BattleCounter p1Results = getCharacterResults(p1Chars, result.p1Character);
+
+            Map<String,BattleCounter> p2Chars = getPlayerMap( playerCharacterCounter, result.p2Id );;
+            BattleCounter p2Results = getCharacterResults(p2Chars, result.p2Character);
+
+            updateResults( p1Results, result.p1Id, p2Results, result.p2Id, result );
+            listener.statisticsComplete();
+        }
+
+        // update database for each character
+        for ( Map.Entry<String, Map<String,BattleCounter>> player : playerCharacterCounter.entrySet() ) {
+            String playerId = player.getKey();
+
+            for ( Map.Entry<String,BattleCounter> charResult : player.getValue().entrySet() ) {
+                String charName = charResult.getKey();
+                BattleCounter charCount = charResult.getValue();
+
+                Log.d( TAG, "" + playerId + " " + charName + " (" + charCount.wins + "/" + charCount.battles + ")");
+                getCharacterPreferenceWins( playerId, charName ).setValue( charCount.wins );
+                getCharacterPreferenceBattles( playerId, charName ).setValue( charCount.battles );
+            }
+        }
+    }
+
+    public interface StatisticsCompleteListener {
+        void statisticsComplete( ) ;
+    }
+
+    public void regenerateStatistics(final StatisticsCompleteListener listener ) {
+        final DatabaseReference results = getResultsDirReference();
+        results.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                results.removeEventListener(this);
+
+                if ( null != dataSnapshot ) {
+                    ArrayList<BattleResult> results = new ArrayList<BattleResult>();
+                    for (DataSnapshot child : dataSnapshot.getChildren()) {
+                        results.add(child.getValue(BattleResult.class));
+                    }
+
+                    doRegenerate( results, listener );
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 }

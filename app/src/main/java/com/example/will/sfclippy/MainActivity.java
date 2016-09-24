@@ -69,17 +69,20 @@ implements View.OnClickListener, FactsUpdateListener {
         private final Activity parent;
         private final Button results;
         private final Button backup;
+        private final Button regenerateStats;
         private final String p1Id;
         private final String p2Id;
 
         public MenuListener( Activity parent,
                              Button results,
                              Button backup,
+                             Button regenerateStats,
                              String p1Id,
                              String p2Id ) {
             this.parent = parent;
             this.results = results;
             this.backup = backup;
+            this.regenerateStats = regenerateStats;
             this.p1Id = p1Id;
             this.p2Id = p2Id;
         }
@@ -94,7 +97,14 @@ implements View.OnClickListener, FactsUpdateListener {
                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
             } else if ( backup == v ) {
                 Toast.makeText(parent, "Backup not implemented", Toast.LENGTH_SHORT).show();
-            }
+            } else if ( regenerateStats == v ) {
+                 helper.regenerateStatistics( new DatabaseHelper.StatisticsCompleteListener() {
+                     @Override
+                     public void statisticsComplete( ) {
+                         Toast.makeText(parent, "Statistics regenerated", Toast.LENGTH_LONG).show();
+                     }
+                 });
+             }
         }
     };
 
@@ -169,13 +179,14 @@ implements View.OnClickListener, FactsUpdateListener {
     private void setupDrawer( ) {
         Button btnBackup = (Button) findViewById(R.id.btnBackup);
         Button btnResults = (Button) findViewById(R.id.btnResults);
-        // Button btnRegenerateStatistics = (Button) findViewById(R.id.btnRegenerateStats);
+        Button btnRegenerateStatistics = (Button) findViewById(R.id.btnRegenerateStats);
 
         MenuListener listener = new MenuListener( this,
                 btnResults,
-                btnBackup, player1Id, player2Id );
+                btnBackup, btnRegenerateStatistics, player1Id, player2Id );
         btnBackup.setOnClickListener( listener );
         btnResults.setOnClickListener( listener );
+        btnRegenerateStatistics.setOnClickListener( listener );
     }
 
     private List<HistoricalTrends.Fact> getBattleFacts( ) {
@@ -269,8 +280,6 @@ implements View.OnClickListener, FactsUpdateListener {
         p1Win.setOnClickListener( this );
         p2Win = (Button) findViewById(R.id.btnWinP2);
         p2Win.setOnClickListener( this );
-        regen = (Button) findViewById(R.id.btnRegen);
-        regen.setOnClickListener( this );
 
         // set up views that show player name
         p1Watcher.registerTextView( p1Text, "%s choice:");
