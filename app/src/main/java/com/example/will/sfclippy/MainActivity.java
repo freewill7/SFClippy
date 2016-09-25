@@ -18,6 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
+import com.example.will.sfclippy.models.BattleCounter;
 import com.example.will.sfclippy.models.BattleResult;
 import com.example.will.sfclippy.models.PlayerInfo;
 import com.google.firebase.database.ChildEventListener;
@@ -30,10 +31,11 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
-implements View.OnClickListener, FactsUpdateListener {
+implements View.OnClickListener {
     private DrawerLayout mainView;
     private String accountId;
     private String player1Id;
@@ -44,13 +46,13 @@ implements View.OnClickListener, FactsUpdateListener {
     private Button p2Button;
     private Button p1Win;
     private Button p2Win;
-    private Button regen;
-    private FactsListener factsListener;
     private StringRefWatcher p1Watcher = new StringRefWatcher();
     private StringRefWatcher p2Watcher = new StringRefWatcher();
-    private HistoricalTrends trends = new HistoricalTrends();
     private static final String UNKNOWN_CHOICE = "unknown";
     private DatabaseHelper helper;
+    private TextView lblFact1;
+    private TextView lblFact2;
+    private TextView lblFact3;
 
     static public final int GET_P1_CHARACTER = 1;
     static public final int GET_P2_CHARACTER = 2;
@@ -64,6 +66,10 @@ implements View.OnClickListener, FactsUpdateListener {
 
     private DatabaseReference p1NameRef;
     private DatabaseReference p2NameRef;
+    private OverallStatsWatcher overallStatsWatcher;
+    private DatabaseReference overallStatsRef;
+    private CharVsCharWatcher charVsCharWatcher;
+    private DatabaseReference charVsCharRef;
 
     private class MenuListener implements View.OnClickListener {
         private final Activity parent;
@@ -108,71 +114,63 @@ implements View.OnClickListener, FactsUpdateListener {
         }
     };
 
-    private static class FactsListener implements View.OnClickListener {
-        private int currentIndex = 0;
-        private TextSwitcher switcher;
-        private List<HistoricalTrends.Fact> facts;
-        private ImageButton previous;
-        private ImageButton next;
+    private static class OverallStatsWatcher implements ValueEventListener {
+        private final TextView lbl;
+        private static final String TAG = "OverallStatsWatcher";
+        private static final String DEFAULT = "No previous results";
 
-        public FactsListener(List<HistoricalTrends.Fact> facts,
-                             TextSwitcher switcher,
-                             ImageButton previous,
-                             ImageButton next ) {
-            this.currentIndex = 0;
-            this.switcher = switcher;
-            this.facts = facts;
-            this.previous = previous;
-            this.next = next;
-
-            updateButtons();
-            updateTextSwitcher();
-        }
-
-        private void updateButtons( ) {
-            if ( 0 == currentIndex ) {
-                previous.setEnabled(false);
-                previous.setClickable(false);
-            } else {
-                previous.setEnabled(true);
-                previous.setClickable(true);
-            }
-
-            if ( currentIndex + 1 < facts.size() ) {
-                next.setEnabled(true);
-                next.setClickable(true);
-            } else {
-                next.setEnabled(false);
-                next.setClickable(false);
-            }
-        }
-
-        private void updateTextSwitcher( ) {
-            if ( currentIndex < facts.size() ) {
-                switcher.setText(facts.get(currentIndex).getInfo());
-            } else {
-                switcher.setText("No facts");
-            }
-        }
-
-        private void replaceFacts( List<HistoricalTrends.Fact> facts ) {
-            this.facts = facts;
-            this.currentIndex = 0;
-            updateButtons();
-            updateTextSwitcher();
+        public OverallStatsWatcher( TextView lbl ) {
+            this.lbl = lbl;
+            lbl.setText( DEFAULT );
         }
 
         @Override
-        public void onClick( View v ) {
-            if ( v == previous ) {
-                currentIndex--;
-                updateButtons();
-                updateTextSwitcher();
-            } else if ( v == next ) {
-                currentIndex++;
-                updateButtons();
-                updateTextSwitcher();
+        public void onDataChange( DataSnapshot snapshot ) {
+            lbl.setText( DEFAULT );
+            if ( null != snapshot ) {
+                BattleCounter counter = snapshot.getValue(BattleCounter.class);
+                if ( null != counter ) {
+                    String msg = String.format(Locale.UK,
+                            "Overall %d vs %d wins (%d%%)", counter.wins, counter.battles - counter.wins,
+                            (counter.wins * 100) / counter.battles );
+                    lbl.setText( msg );
+                }
             }
+        }
+
+        @Override
+        public void onCancelled( DatabaseError err ) {
+            Log.e( TAG, "Cancelled", err.toException() );
+        }
+    }
+
+    private static class CharVsCharWatcher implements ValueEventListener {
+        private final TextView lbl;
+        private static final String TAG = "OverallStatsWatcher";
+        private static final String DEFAULT = "No previous pairing";
+
+        public CharVsCharWatcher( TextView lbl ) {
+            this.lbl = lbl;
+            lbl.setText( DEFAULT );
+        }
+
+        @Override
+        public void onDataChange( DataSnapshot snapshot ) {
+            lbl.setText(DEFAULT);
+            if ( null != snapshot ) {
+                BattleCounter counter = snapshot.getValue(BattleCounter.class);
+                if ( null != counter ) {
+                    String msg = String.format(Locale.UK,
+                            "Pairing %d vs %d wins (%d%%)", counter.wins, counter.battles - counter.wins,
+                            (counter.wins * 100) / counter.battles );
+                    lbl.setText( msg );
+                }
+            }
+        }
+
+        @Override
+        public void onCancelled( DatabaseError err ) {
+            Log.e( TAG, "Cancelled", err.toException() );
         }
     }
 
@@ -189,58 +187,18 @@ implements View.OnClickListener, FactsUpdateListener {
         btnRegenerateStatistics.setOnClickListener( listener );
     }
 
-    private List<HistoricalTrends.Fact> getBattleFacts( ) {
-        return new ArrayList<HistoricalTrends.Fact>();
-        /*
-        List<HistoricalTrends.Fact> facts = trends.getBattleFacts(
-                p1Watcher.getPlayerInfo(),
-                p1Choice,
-                p2Watcher.getPlayerInfo(),
-                p2Choice,
-                Calendar.getInstance().getTime() );
-
-        // sort facts to more interesting facts appear first
-        Collections.sort(facts, new Comparator<HistoricalTrends.Fact>() {
-            @Override
-            public int compare(HistoricalTrends.Fact lhs, HistoricalTrends.Fact rhs) {
-                return rhs.getScore() - lhs.getScore();
-            }
-        });
-
-        return facts;]*/
-    }
-
-    private void setupTextSwitcher( ) {
-        View factsWidget = findViewById(R.id.viewFactWidget);
-        ImageButton next = (ImageButton) factsWidget.findViewById(R.id.btnFactNext);
-        ImageButton previous = (ImageButton) factsWidget.findViewById(R.id.btnFactPrevious);
-        TextSwitcher switcher = (TextSwitcher) factsWidget.findViewById(R.id.textSwitcher);
-
-        switcher.setFactory(new ViewSwitcher.ViewFactory() {
-            public View makeView() {
-                // TODO Auto-generated method stub
-                // create new textView and set the properties like clolr, size etc
-                TextView myText = new TextView(MainActivity.this);
-                //myText.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-                //myText.setTextSize(36);
-                //myText.setTextColor(Color.BLUE);
-                return myText;
-            }
-        });
-
-        List<HistoricalTrends.Fact> facts = new ArrayList<>();
-                //getBattleFacts();
-
-        factsListener = new FactsListener( facts, switcher, previous, next );
-        next.setOnClickListener(factsListener);
-        previous.setOnClickListener(factsListener);
-    }
-
     private void checkButtons( ) {
         boolean enabled = true;
         if ( 0 == p1Choice.compareTo(UNKNOWN_CHOICE)
                 || 0 == p2Choice.compareTo(UNKNOWN_CHOICE) ) {
             enabled = false;
+        } else {
+            if ( null != charVsCharRef ) {
+                charVsCharRef.removeEventListener(charVsCharWatcher);
+            }
+            charVsCharRef = helper.getPvpCvcRef( player1Id, player2Id,
+                    p1Choice, p2Choice );
+            charVsCharRef.addValueEventListener(charVsCharWatcher);
         }
 
         p1Win.setEnabled(enabled);
@@ -287,6 +245,11 @@ implements View.OnClickListener, FactsUpdateListener {
         p2Watcher.registerTextView( p2Text, "%s choice:");
         p2Watcher.registerTextView( p2Win, "%s win" );
 
+        // get facts
+        lblFact1 = (TextView) findViewById(R.id.lblFact1);
+        lblFact2 = (TextView) findViewById(R.id.lblFact2);
+        lblFact3 = (TextView) findViewById(R.id.lblFact3);
+
         // get id associated with the battle
         // first from intent... then from saved instance state
         Intent intent = getIntent();
@@ -307,7 +270,10 @@ implements View.OnClickListener, FactsUpdateListener {
         p2NameRef = helper.getPlayerNameRef( player2Id );
         p2NameRef.addValueEventListener( p2Watcher );
 
-        setupTextSwitcher();
+        overallStatsRef = helper.getPlayerVsPlayerRef( player1Id, player2Id );
+        overallStatsWatcher = new OverallStatsWatcher( lblFact1 );
+        overallStatsRef.addValueEventListener( overallStatsWatcher );
+        charVsCharWatcher = new CharVsCharWatcher( lblFact2 );
 
         p1Button = (Button) findViewById(R.id.btnChoiceP1);
         p1Button.setOnClickListener( this );
@@ -368,8 +334,6 @@ implements View.OnClickListener, FactsUpdateListener {
             recordWin(player1Id, p1Watcher.getValue());
         } else if ( p2Win == v ) {
             recordWin(player2Id, p2Watcher.getValue());
-        } else if ( regen == v ) {
-            regenerateFacts();
         } else {
             Toast t = Toast.makeText( v.getContext(), "Unknown button", Toast.LENGTH_SHORT );
             t.show();
@@ -383,8 +347,6 @@ implements View.OnClickListener, FactsUpdateListener {
                 p1Choice = data.getStringExtra( CharacterSelectActivity.GET_CHARACTER_PROPERTY );
                 p1Button.setText( p1Choice );
 
-                List<HistoricalTrends.Fact> facts = getBattleFacts();
-                factsListener.replaceFacts(facts);
                 checkButtons();
             }
         } else if ( requestCode == GET_P2_CHARACTER ) {
@@ -392,8 +354,6 @@ implements View.OnClickListener, FactsUpdateListener {
                 p2Choice = data.getStringExtra(CharacterSelectActivity.GET_CHARACTER_PROPERTY);
                 p2Button.setText(p2Choice);
 
-                List<HistoricalTrends.Fact> facts = getBattleFacts();
-                factsListener.replaceFacts(facts);
                 checkButtons();
             }
         } else if ( requestCode == DO_BACKUP ) {
@@ -410,18 +370,11 @@ implements View.OnClickListener, FactsUpdateListener {
     public void onDestroy( ) {
         p1NameRef.removeEventListener(p1Watcher);
         p2NameRef.removeEventListener(p2Watcher);
+        overallStatsRef.removeEventListener( overallStatsWatcher );
+        if ( null != charVsCharRef ) {
+            charVsCharRef.removeEventListener(charVsCharWatcher);
+        }
+
         super.onDestroy();
-    }
-
-    @Override
-    public void factsUpdated( ) {
-        Log.d( TAG, "Facts updated" );
-        List<HistoricalTrends.Fact> facts = getBattleFacts();
-        factsListener.replaceFacts(facts);
-    }
-
-    public void regenerateFacts( ) {
-        //regeneratePlayerStatistics( p1Watcher.playerInfo );
-        // regeneratePlayerStatistics( p2Watcher.playerInfo );
     }
 }

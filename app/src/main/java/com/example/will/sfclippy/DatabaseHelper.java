@@ -1,6 +1,7 @@
 package com.example.will.sfclippy;
 
 import android.util.Log;
+import android.util.Pair;
 
 import com.example.will.sfclippy.models.BattleCounter;
 import com.example.will.sfclippy.models.BattleResult;
@@ -14,6 +15,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,9 @@ public class DatabaseHelper {
     private DatabaseReference mUserHome;
     private static final String TAG = "DatabaseHelper";
     private static final int DEFAULT_SCORE = 2;
+    private static final String PLAYER_VS_PLAYER_DIR = "player_vs_player";
+    private static final String PVP_OVERALL = "overall";
+    private static final String PVP_CHARACTERS = "characters";
     private static final String STATISTICS_MEMBER = "statistics";
 
     DatabaseHelper( FirebaseDatabase database, String accountId ) {
@@ -101,6 +106,56 @@ public class DatabaseHelper {
         });
     }
 
+    private void incrementWin( final DatabaseReference ref, final Date date ) {
+        ref.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                ref.removeEventListener(this);
+                BattleCounter counter = new BattleCounter();
+
+                if ( null != dataSnapshot ) {
+                    BattleCounter tmp = dataSnapshot.getValue(BattleCounter.class);
+                    if ( null != tmp ) {
+                        counter = tmp;
+                    }
+                }
+
+                counter.recordWin(date);
+                ref.setValue(counter);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.e( "recordWin", "incrementWin", databaseError.toException() );
+            }
+        });
+    }
+
+    private void incrementLoss( final DatabaseReference ref, final Date date ) {
+        ref.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                ref.removeEventListener(this);
+                BattleCounter counter = new BattleCounter();
+
+                if ( null != dataSnapshot ) {
+                    BattleCounter tmp = dataSnapshot.getValue(BattleCounter.class);
+                    if ( null != tmp ) {
+                        counter = tmp;
+                    }
+                }
+
+                counter.recordLoss(date);
+                ref.setValue(counter);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.e( "recordLoss", "incrementLoss", databaseError.toException() );
+            }
+        });
+    }
+
     public void storeResult( String player1Id,
                              String p1Choice,
                              String player2Id,
@@ -110,7 +165,9 @@ public class DatabaseHelper {
         DatabaseReference results = getResultsDirReference();
         DatabaseReference child = results.push();
 
-        BattleResult result = new BattleResult( Calendar.getInstance().getTime(),
+        // record in results manifest (important_
+        Date date = Calendar.getInstance().getTime();
+        BattleResult result = new BattleResult( date,
                 child.getKey(),
                 player1Id,
                 p1Choice,
@@ -118,6 +175,32 @@ public class DatabaseHelper {
                 p2Choice,
                 winnerId );
         child.setValue( result, listener );
+
+        // update statistics
+        DatabaseReference p1Char = getCharacterStatistics(player1Id, p1Choice);
+        DatabaseReference p2Char = getCharacterStatistics(player2Id, p2Choice);
+        DatabaseReference p1p2 = getPlayerVsPlayerRef(player1Id, player2Id);
+        DatabaseReference p2p1 = getPlayerVsPlayerRef(player2Id, player1Id);
+        DatabaseReference p1p2Chars = getPvpCvcRef( player1Id, player2Id, p1Choice, p2Choice );
+        DatabaseReference p2p1Chars = getPvpCvcRef( player2Id, player1Id, p2Choice, p1Choice );
+
+        if ( player1Id.equals(winnerId) ) {
+            incrementWin( p1Char, date);
+            incrementWin( p1p2, date );
+            incrementWin( p1p2Chars, date );
+
+            incrementLoss( p2Char, date);
+            incrementLoss( p2p1, date );
+            incrementLoss( p2p1Chars, date );
+        } else {
+            incrementWin( p2Char, date);
+            incrementWin( p2p1, date );
+            incrementWin( p2p1Chars, date );
+
+            incrementLoss( p1Char, date);
+            incrementLoss( p1p2, date );
+            incrementLoss( p1p2Chars, date );
+        }
     }
 
     private static String characterKey( String name ) {
@@ -128,6 +211,19 @@ public class DatabaseHelper {
     private DatabaseReference getCharacterPreference( String playerId, String characterName ) {
         String charKey = characterKey(characterName);
         return getPlayerPrefsRef( playerId ).child(charKey);
+    }
+
+    public DatabaseReference getPlayerVsPlayerRef( String player1, String player2 ) {
+        return mUserHome.child(PLAYER_VS_PLAYER_DIR).child( player1 ).child( player2 ).child(PVP_OVERALL);
+    }
+
+    public DatabaseReference getPvpCvcRef( String p1, String p2, String c1, String c2 ) {
+        return mUserHome.child(PLAYER_VS_PLAYER_DIR)
+                .child(p1)
+                .child(p2)
+                .child(PVP_CHARACTERS)
+                .child( characterKey(c1) )
+                .child( characterKey(c2) );
     }
 
     public void updateCharacterScore( String playerId,
@@ -153,7 +249,7 @@ public class DatabaseHelper {
                 "Zangief", "Laura", "Dhalsim", "F.A.N.G.",
                 "Alex", "Guile", "Ibuki", "Balrog", "Juri" };
         for ( String character : characters ) {
-
+            createCharacter( ref, character );
         }
     }
 
@@ -172,11 +268,24 @@ public class DatabaseHelper {
         return rv;
     }
 
-    private BattleCounter getCharacterResults( Map<String,BattleCounter> map, String character ) {
-        BattleCounter rv = map.get(character);
+    private interface Factory<V> {
+        V createInstance( );
+    }
+
+    private <K,V> V fetchOrInitialize( Map<K, V> map, K key, Factory<V> factory ) {
+        V rv = map.get(key);
+        if ( null == rv ) {
+            rv = factory.createInstance();
+            map.put( key, rv );
+        }
+        return rv;
+    }
+
+    private BattleCounter getOpponentResult( Map<String,BattleCounter> map, String opponent ) {
+        BattleCounter rv = map.get(opponent);
         if ( null == rv ) {
             rv = new BattleCounter();
-            map.put( character, rv );
+            map.put( opponent, rv );
         }
         return rv;
     }
@@ -193,14 +302,6 @@ public class DatabaseHelper {
         }
     }
 
-    public DatabaseReference getCharacterPreferenceWins( String playerId, String charName ) {
-        return getCharacterPreference(playerId, charName).child( "battles_won" );
-    }
-
-    public DatabaseReference getCharacterPreferenceBattles( String playerId, String charName ) {
-        return getCharacterPreference(playerId, charName).child( "battles_fought" );
-    }
-
     public DatabaseReference getCharacterStatistics( String playerId, String charName ) {
         return getCharacterPreference(playerId, charName).child( STATISTICS_MEMBER );
     }
@@ -208,29 +309,90 @@ public class DatabaseHelper {
     private void doRegenerate( List<BattleResult> results, StatisticsCompleteListener listener ) {
 
         // analyse results
-        Map<String, Map<String,BattleCounter>> playerCharacterCounter = new HashMap<>();
+        Map<Pair<String,String>, BattleCounter> playerCharacterCounter = new HashMap<>();
+        Map<Pair<String,String>, BattleCounter> playerToPlayerCounter = new HashMap<>();
+        Map<Pair<String,String>, Map<Pair<String,String>, BattleCounter>> playerCharToPlayerChar
+                = new HashMap<>();
+
         for ( BattleResult result : results ) {
-            Map<String,BattleCounter> p1Chars = getPlayerMap( playerCharacterCounter, result.p1Id );
-            BattleCounter p1Results = getCharacterResults(p1Chars, result.p1Character);
+            Pair<String,String> p1Char = new Pair<>( result.p1Id, result.p1Character );
+            Pair<String,String> p2Char = new Pair<>( result.p2Id, result.p2Character );
+            Pair<String,String> p1p2 = new Pair<>( result.p1Id, result.p2Id );
+            Pair<String,String> p2p1 = new Pair<>( result.p2Id, result.p1Id );
+            Pair<String,String> c1c2 = new Pair<>( result.p1Character, result.p2Character );
+            Pair<String,String> c2c1 = new Pair<>( result.p2Character, result.p1Character );
 
-            Map<String,BattleCounter> p2Chars = getPlayerMap( playerCharacterCounter, result.p2Id );;
-            BattleCounter p2Results = getCharacterResults(p2Chars, result.p2Character);
+            Factory<BattleCounter> bcF = new Factory<BattleCounter>() {
+                @Override
+                public BattleCounter createInstance() {
+                    return new BattleCounter();
+                }
+            };
+            Factory<Map<Pair<String,String>,BattleCounter>> mbcF =
+                    new Factory<Map<Pair<String,String>, BattleCounter>>() {
+                        @Override
+                        public Map<Pair<String,String>, BattleCounter> createInstance() {
+                            return new HashMap<>();
+                        }
+                    };
 
+            BattleCounter p1Results = fetchOrInitialize( playerCharacterCounter, p1Char, bcF );
+            BattleCounter p2Results = fetchOrInitialize( playerCharacterCounter, p2Char, bcF );
             updateResults( p1Results, result.p1Id, p2Results, result.p2Id, result );
-            listener.statisticsComplete();
+
+            BattleCounter p1Opponent = fetchOrInitialize( playerToPlayerCounter, p1p2, bcF );
+            BattleCounter p2Opponent = fetchOrInitialize( playerToPlayerCounter, p2p1, bcF );
+            updateResults( p1Opponent, result.p1Id, p2Opponent, result.p2Id, result );
+
+            Map<Pair<String,String>, BattleCounter> p1p2Chars =
+                    fetchOrInitialize( playerCharToPlayerChar, p1p2, mbcF );
+            Map<Pair<String,String>, BattleCounter> p2p1Chars =
+                    fetchOrInitialize( playerCharToPlayerChar, p2p1, mbcF );
+            BattleCounter p1Chars = fetchOrInitialize(p1p2Chars, c1c2, bcF );
+            BattleCounter p2Chars = fetchOrInitialize(p2p1Chars, c2c1, bcF );
+            updateResults( p1Chars, result.p1Id, p2Chars, result.p2Id, result );
         }
 
         // update database for each character
-        for ( Map.Entry<String, Map<String,BattleCounter>> player : playerCharacterCounter.entrySet() ) {
-            String playerId = player.getKey();
+        Log.d( TAG, "Player to character statistics " + playerCharacterCounter.size());
+        for ( Map.Entry<Pair<String,String>,BattleCounter> it : playerCharacterCounter.entrySet() ) {
+            Pair<String,String> playerChar = it.getKey();
+            String playerId = playerChar.first;
+            String charName = playerChar.second;
+            BattleCounter result = it.getValue();
 
-            for ( Map.Entry<String,BattleCounter> charResult : player.getValue().entrySet() ) {
-                String charName = charResult.getKey();
-                BattleCounter charCount = charResult.getValue();
+            getCharacterStatistics( playerId, charName ).setValue( result );
+        }
 
-                getCharacterStatistics( playerId, charName ).setValue( charCount );
+        // update database for each player vs player combo
+        Log.d( TAG, "Player to player statistics" + playerToPlayerCounter.size());
+        for ( Map.Entry<Pair<String,String>,BattleCounter> it : playerToPlayerCounter.entrySet() ) {
+            String firstPlayer = it.getKey().first;
+            String secondPlayer = it.getKey().second;
+            BattleCounter result = it.getValue();
+
+            DatabaseReference ref = getPlayerVsPlayerRef( firstPlayer, secondPlayer );
+            ref.setValue( result );
+        }
+
+        // update database for each player vs player, char vs char combo
+        Log.d( TAG, "PvP and CvC" + playerCharToPlayerChar.size());
+        for ( Map.Entry<Pair<String,String>,Map<Pair<String,String>,BattleCounter>> it
+                : playerCharToPlayerChar.entrySet() ) {
+            String p1 = it.getKey().first;
+            String p2 = it.getKey().second;
+
+            for ( Map.Entry<Pair<String,String>,BattleCounter> jit : it.getValue().entrySet() ) {
+                String c1 = jit.getKey().first;
+                String c2 = jit.getKey().second;
+                BattleCounter counter = jit.getValue();
+
+                DatabaseReference ref = getPvpCvcRef( p1, p2, c1, c2 );
+                ref.setValue(counter);
             }
         }
+
+        listener.statisticsComplete();
     }
 
     public interface StatisticsCompleteListener {
