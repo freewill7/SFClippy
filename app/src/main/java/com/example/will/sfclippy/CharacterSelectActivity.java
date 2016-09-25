@@ -52,7 +52,10 @@ implements CharacterRatingFragment.RatingInteractionListener {
         public TextView mTextView;
         public CharacterPreference mCharacter;
 
-        public ViewHolder( Activity activity, View view ) {
+        public ViewHolder( Activity activity,
+                           View view,
+                           final String accountId,
+                           final String playerId ) {
             super(view);
             mActivity = activity;
             mView = view;
@@ -65,7 +68,10 @@ implements CharacterRatingFragment.RatingInteractionListener {
                 @Override
                 public void onClick(View v) {
                     CharacterRatingFragment frag = CharacterRatingFragment.newInstance(
-                            mCharacter.name, mCharacter.score, mCharacter.battles_fought, mCharacter.battles_won );
+                            accountId,
+                            playerId,
+                            mCharacter.name,
+                            mCharacter.score );
                     frag.show( mActivity.getFragmentManager(), "frame name" );
                 }
             });
@@ -83,6 +89,7 @@ implements CharacterRatingFragment.RatingInteractionListener {
     implements ValueEventListener {
         private List<CharacterPreference> mDataset = new ArrayList<>();
         private Activity mActivity;
+        private String mAccountId;
         private String mPlayerId;
         private DatabaseHelper mHelper;
         private int defaultItemId;
@@ -91,9 +98,11 @@ implements CharacterRatingFragment.RatingInteractionListener {
         private RandomSelector selector = new RandomSelector();
 
         public MySelectAdapter( Activity activity,
+                                String accountId,
                                 String playerId,
                                 DatabaseHelper helper ) {
             mActivity = activity;
+            mAccountId = accountId;
             mPlayerId = playerId;
             mHelper = helper;
             defaultItemId = -1;
@@ -148,7 +157,7 @@ implements CharacterRatingFragment.RatingInteractionListener {
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
             View view = (View) LayoutInflater.from( parent.getContext() )
                     .inflate( R.layout.layout_character_choice, parent, false );
-            ViewHolder vh = new ViewHolder( mActivity, view );
+            ViewHolder vh = new ViewHolder( mActivity, view, mAccountId, mPlayerId );
             return vh;
         }
 
@@ -206,7 +215,7 @@ implements CharacterRatingFragment.RatingInteractionListener {
         getSupportActionBar().setTitle( title );
 
         mReference = helper.getPlayerPrefsRef( playerId );
-        mAdapter = new MySelectAdapter( this, playerId, helper );
+        mAdapter = new MySelectAdapter( this, accountId, playerId, helper );
         mReference.addValueEventListener( mAdapter );
 
         this.listView = (RecyclerView) findViewById( R.id.characterList );

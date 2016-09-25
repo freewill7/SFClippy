@@ -54,7 +54,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/lblTotalBattles"
+        android:id="@+id/lblFirstFact"
         android:gravity="center_horizontal" />
 
     <Space
@@ -64,7 +64,17 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/lblTotalWins"
+        android:id="@+id/lblSecondFact"
+        android:gravity="center_horizontal" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/lblThirdFact"
         android:gravity="center_horizontal" />
 
 </LinearLayout>

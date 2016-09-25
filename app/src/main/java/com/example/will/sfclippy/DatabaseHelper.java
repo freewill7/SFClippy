@@ -9,6 +9,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ public class DatabaseHelper {
     private DatabaseReference mUserHome;
     private static final String TAG = "DatabaseHelper";
     private static final int DEFAULT_SCORE = 2;
+    private static final String STATISTICS_MEMBER = "statistics";
 
     DatabaseHelper( FirebaseDatabase database, String accountId ) {
         this.mDatabase = database;
@@ -137,7 +139,7 @@ public class DatabaseHelper {
     }
 
     private static void createCharacter( DatabaseReference preferences, String name ) {
-        CharacterPreference pref = new CharacterPreference( name, DEFAULT_SCORE, 0, 0 );
+        CharacterPreference pref = new CharacterPreference( name, DEFAULT_SCORE );
         String key = characterKey(name);
         preferences.child(key).setValue( pref );
     }
@@ -183,11 +185,11 @@ public class DatabaseHelper {
                                 BattleCounter p2Result, String p2Id,
                                 BattleResult result ) {
         if ( result.winnerId.equals(p1Id)) {
-            p1Result.recordWin();
-            p2Result.recordLoss();
+            p1Result.recordWin( result.dateAsDate() );
+            p2Result.recordLoss( result.dateAsDate() );
         } else {
-            p1Result.recordLoss();
-            p2Result.recordWin();
+            p1Result.recordLoss( result.dateAsDate() );
+            p2Result.recordWin( result.dateAsDate() );
         }
     }
 
@@ -197,6 +199,10 @@ public class DatabaseHelper {
 
     public DatabaseReference getCharacterPreferenceBattles( String playerId, String charName ) {
         return getCharacterPreference(playerId, charName).child( "battles_fought" );
+    }
+
+    public DatabaseReference getCharacterStatistics( String playerId, String charName ) {
+        return getCharacterPreference(playerId, charName).child( STATISTICS_MEMBER );
     }
 
     private void doRegenerate( List<BattleResult> results, StatisticsCompleteListener listener ) {
@@ -222,9 +228,7 @@ public class DatabaseHelper {
                 String charName = charResult.getKey();
                 BattleCounter charCount = charResult.getValue();
 
-                Log.d( TAG, "" + playerId + " " + charName + " (" + charCount.wins + "/" + charCount.battles + ")");
-                getCharacterPreferenceWins( playerId, charName ).setValue( charCount.wins );
-                getCharacterPreferenceBattles( playerId, charName ).setValue( charCount.battles );
+                getCharacterStatistics( playerId, charName ).setValue( charCount );
             }
         }
     }
@@ -234,7 +238,7 @@ public class DatabaseHelper {
     }
 
     public void regenerateStatistics(final StatisticsCompleteListener listener ) {
-        final DatabaseReference results = getResultsDirReference();
+        final Query results = getResultsDirReference().orderByChild("date");
         results.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {

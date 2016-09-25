@@ -12,18 +12,16 @@ import java.util.Comparator;
 public class CharacterPreference {
     public String name;
     public int score;
-    public int battles_fought;
-    public int battles_won;
+    public BattleCounter statistics;
 
     public CharacterPreference( ) {
         // default constructor
     }
 
-    public CharacterPreference( String name, int score, int battles, int wins ) {
+    public CharacterPreference( String name, int score ) {
         this.name = name;
         this.score = score;
-        this.battles_fought = battles;
-        this.battles_won = wins;
+        statistics = new BattleCounter();
     }
 
     /**

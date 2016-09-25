@@ -145,10 +145,9 @@ implements ResultDialogFragment.ResultDialogListener {
             }
             holder.resultPairing.setText( p1String + " vs " + p2String );
             String date = "unknown";
-            try {
-                date = dateFormat.format( result.dateAsDate());
-            } catch ( ParseException parseError ) {
-                Log.e( TAG, "Failed to parse date", parseError );
+            String tmpDate = dateFormat.format( result.dateAsDate());
+            if ( null != tmpDate ) {
+                date = tmpDate;
             }
             holder.dateView.setText(date);
         }

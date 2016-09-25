@@ -1,5 +1,7 @@
 package com.example.will.sfclippy.models;
 
+import android.util.Log;
+
 import com.google.firebase.database.IgnoreExtraProperties;
 
 import java.text.ParseException;
@@ -12,6 +14,7 @@ import java.util.Date;
 
 @IgnoreExtraProperties
 public class BattleResult {
+    private static final String TAG = "BattleResult";
     public String date;
     public String battleId;
     public String p1Id;
@@ -52,7 +55,13 @@ public class BattleResult {
         }
     }
 
-    public Date dateAsDate( ) throws ParseException {
-        return dateFormat.parse(date);
+    public Date dateAsDate( ) {
+        Date ret = null;
+        try {
+            ret = dateFormat.parse(date);
+        } catch ( ParseException except ) {
+            Log.e( TAG, "Problem parsing date", except);
+        }
+        return ret;
     }
 }
