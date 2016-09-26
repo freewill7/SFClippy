@@ -116,11 +116,15 @@ implements View.OnClickListener {
 
     private static class OverallStatsWatcher implements ValueEventListener {
         private final TextView lbl;
+        private final StringRefWatcher p1Name;
+        private final StringRefWatcher p2Name;
         private static final String TAG = "OverallStatsWatcher";
         private static final String DEFAULT = "No previous results";
 
-        public OverallStatsWatcher( TextView lbl ) {
+        public OverallStatsWatcher( TextView lbl, StringRefWatcher p1Name, StringRefWatcher p2Name ) {
             this.lbl = lbl;
+            this.p1Name = p1Name;
+            this.p2Name = p2Name;
             lbl.setText( DEFAULT );
         }
 
@@ -131,8 +135,10 @@ implements View.OnClickListener {
                 BattleCounter counter = snapshot.getValue(BattleCounter.class);
                 if ( null != counter ) {
                     String msg = String.format(Locale.UK,
-                            "Overall %d vs %d wins (%d%%)", counter.wins, counter.battles - counter.wins,
-                            (counter.wins * 100) / counter.battles );
+                            "%s wins %d%% of battles (%d vs %d)",
+                            p1Name.getValue(),
+                            (counter.wins * 100) / counter.battles,
+                            counter.wins, (counter.battles - counter.wins) );
                     lbl.setText( msg );
                 }
             }
@@ -146,11 +152,18 @@ implements View.OnClickListener {
 
     private static class CharVsCharWatcher implements ValueEventListener {
         private final TextView lbl;
+        private final StringRefWatcher p1Name;
+        private final StringRefWatcher p2Name;
         private static final String TAG = "OverallStatsWatcher";
         private static final String DEFAULT = "No previous pairing";
 
-        public CharVsCharWatcher( TextView lbl ) {
+
+        public CharVsCharWatcher( TextView lbl,
+                                  StringRefWatcher p1Name,
+                                  StringRefWatcher p2Name ) {
             this.lbl = lbl;
+            this.p1Name = p1Name;
+            this.p2Name = p2Name;
             lbl.setText( DEFAULT );
         }
 
@@ -160,9 +173,25 @@ implements View.OnClickListener {
             if ( null != snapshot ) {
                 BattleCounter counter = snapshot.getValue(BattleCounter.class);
                 if ( null != counter ) {
-                    String msg = String.format(Locale.UK,
-                            "Pairing %d vs %d wins (%d%%)", counter.wins, counter.battles - counter.wins,
-                            (counter.wins * 100) / counter.battles );
+                    int wins = counter.wins;
+                    int losses = counter.battles - counter.wins;
+                    int total = counter.battles;
+
+                    String msg = "";
+                    if ( wins > losses ) {
+                        msg = String.format(Locale.UK,
+                                "%s wins %d%% encounters (%d vs %d)",
+                                p1Name.getValue(), (100 * wins) / total, wins, losses );
+                    } else if ( losses > wins ) {
+                        msg = String.format( Locale.UK,
+                                "%s wins %d%% encounters (%d vs %d)",
+                                p2Name.getValue(), (100 * losses) / total, losses, wins );
+                    } else {
+                        msg = String.format( Locale.UK,
+                                "Even encounter history (%d vs %d)",
+                                wins, losses );
+                    }
+
                     lbl.setText( msg );
                 }
             }
@@ -271,9 +300,9 @@ implements View.OnClickListener {
         p2NameRef.addValueEventListener( p2Watcher );
 
         overallStatsRef = helper.getPlayerVsPlayerRef( player1Id, player2Id );
-        overallStatsWatcher = new OverallStatsWatcher( lblFact1 );
+        overallStatsWatcher = new OverallStatsWatcher( lblFact1, p1Watcher, p2Watcher );
         overallStatsRef.addValueEventListener( overallStatsWatcher );
-        charVsCharWatcher = new CharVsCharWatcher( lblFact2 );
+        charVsCharWatcher = new CharVsCharWatcher( lblFact2, p1Watcher, p2Watcher );
 
         p1Button = (Button) findViewById(R.id.btnChoiceP1);
         p1Button.setOnClickListener( this );

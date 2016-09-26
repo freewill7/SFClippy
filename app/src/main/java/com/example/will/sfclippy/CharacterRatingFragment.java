@@ -22,6 +22,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import org.w3c.dom.Text;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
@@ -43,6 +44,7 @@ public class CharacterRatingFragment extends DialogFragment
     private static final String ARG_CHARACTER_NAME = "characterName";
     private static final String ARG_CHARACTER_SCORE = "characterScore";
     private static final String TAG = "CharacterRatingFragment";
+    private static final SimpleDateFormat humanDate = new SimpleDateFormat("dd-MMM");
 
     private String mAccountId;
     private String mPlayerId;
@@ -99,52 +101,64 @@ public class CharacterRatingFragment extends DialogFragment
         }
     }
 
-    private static String getDaySuffix( Date previous, Date current ) {
+    private String getRunInfo( BattleCounter counter ) {
         String ret = "";
 
-        if ( null != previous && null != current ) {
-            long nowMs = current.getTime();
-            long then = previous.getTime();
+        if ( counter.winsSinceLoss > 0 ) {
+            Date lastLoss = counter.lastDefeatAsDate();
+            String strLastLoss = humanDate.format(lastLoss);
 
-            long diff = nowMs - then;
-            long days = diff / (1000 * 60 * 60 * 24);
+            ret = String.format( "No losses since %s (%d battles)",
+                    strLastLoss,
+                    counter.winsSinceLoss );
 
-            ret = String.format( "(%d days)", days );
+        } else if ( counter.lossesSinceLastWin > 0 ) {
+            Date lastVictory = counter.lastVictoryAsDate();
+            String strLastVictory = humanDate.format(lastVictory);
+
+            ret = String.format( "No wins since %s (%d battles)",
+                    strLastVictory,
+                    counter.lossesSinceLastWin );
         }
 
         return ret;
     }
 
-    private String getRunInfo( BattleCounter counter ) {
-        String ret = "";
+    private String getLastPlayedInfo( BattleCounter counter ) {
+        Date mostRecent = null;
+        String ret = "Never played as this character";
 
         if ( counter.winsSinceLoss > 0 ) {
-            String daySuffix = getDaySuffix( counter.lastDefeatAsDate(),
-                    counter.lastVictoryAsDate() );
-            ret = String.format( "No losses in %d battles %s",
-                    counter.winsSinceLoss, daySuffix );
+            mostRecent = counter.lastVictoryAsDate();
+        } else {
+            mostRecent = counter.lastDefeatAsDate();
+        }
 
-        } else if ( counter.lossesSinceLastWin > 0 ) {
-            String daySuffix = getDaySuffix( counter.lastVictoryAsDate(),
-                    counter.lastDefeatAsDate() );
-            ret = String.format( "No wins in %d battles %s",
-                    counter.lossesSinceLastWin,
-                    daySuffix );
+        if ( null != mostRecent ) {
+            String date = humanDate.format(mostRecent);
+
+            long recentMs = mostRecent.getTime();
+            long nowMs = Calendar.getInstance().getTime().getTime();
+
+            ret = String.format( Locale.UK,
+                    "Last played on %s", date );
         }
 
         return ret;
     }
 
     private void updateLabels( BattleCounter counter ) {
-        if ( 0 != counter.battles ) {
+        if ( 0 == counter.battles ) {
+            mLabelFirst.setText( "Never played as this character" );
+        } else {
             mLabelFirst.setText(
-                    String.format(Locale.UK, "Played %d times",
-                            counter.battles)
+                    getLastPlayedInfo( counter )
             );
 
             mLabelSecond.setText(
-                    String.format(Locale.UK, "Won %d battles (%d%%)",
+                    String.format(Locale.UK, "Won %d battles from %d (%d%%)",
                             counter.wins,
+                            counter.battles,
                             (100 * counter.wins) /  counter.battles)
             );
 

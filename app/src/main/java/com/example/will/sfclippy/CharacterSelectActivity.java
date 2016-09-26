@@ -185,8 +185,20 @@ implements CharacterRatingFragment.RatingInteractionListener {
          */
         public int selectRandom( ) {
             RandomSelector selector = new RandomSelector( mDataset );
-            defaultItemId = selector.randomCharacter();
-            notifyDataSetChanged();
+            //defaultItemId = selector.randomCharacter();
+            //notifyDataSetChanged();
+
+            int itemId = selector.randomCharacter();
+            CharacterPreference character = mDataset.get(itemId);
+
+            // select item as a fragment
+            CharacterRatingFragment frag = CharacterRatingFragment.newInstance(
+                    mAccountId,
+                    mPlayerId,
+                    character.name,
+                    character.score );
+            frag.show( mActivity.getFragmentManager(), "frame name" );
+
             return defaultItemId;
         }
     }
