@@ -41,4 +41,20 @@
         style="@style/Widget.AppCompat.Button.Borderless"
         android:theme="@android:style/Theme.Material.Light" />
 
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/action_show_stats1"
+        android:id="@+id/btnStatsP1"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:theme="@android:style/Theme.Material.Light" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/action_show_stats2"
+        android:id="@+id/btnStatsP2"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:theme="@android:style/Theme.Material.Light" />
+
 </LinearLayout>

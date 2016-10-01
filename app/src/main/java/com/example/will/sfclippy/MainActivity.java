@@ -76,6 +76,8 @@ implements View.OnClickListener {
         private final Button results;
         private final Button backup;
         private final Button regenerateStats;
+        private final Button stats1;
+        private final Button stats2;
         private final String p1Id;
         private final String p2Id;
 
@@ -83,12 +85,16 @@ implements View.OnClickListener {
                              Button results,
                              Button backup,
                              Button regenerateStats,
+                             Button stats1,
+                             Button stats2,
                              String p1Id,
                              String p2Id ) {
             this.parent = parent;
             this.results = results;
             this.backup = backup;
             this.regenerateStats = regenerateStats;
+            this.stats1 = stats1;
+            this.stats2 = stats2;
             this.p1Id = p1Id;
             this.p2Id = p2Id;
         }
@@ -104,12 +110,24 @@ implements View.OnClickListener {
             } else if ( backup == v ) {
                 Toast.makeText(parent, "Backup not implemented", Toast.LENGTH_SHORT).show();
             } else if ( regenerateStats == v ) {
-                 helper.regenerateStatistics( new DatabaseHelper.StatisticsCompleteListener() {
+                 helper.regenerateStatistics(new DatabaseHelper.StatisticsCompleteListener() {
                      @Override
-                     public void statisticsComplete( ) {
+                     public void statisticsComplete() {
                          Toast.makeText(parent, "Statistics regenerated", Toast.LENGTH_LONG).show();
                      }
                  });
+             } else if ( stats1 == v ) {
+                 Intent intent = new Intent(parent, PlayerStatistics.class);
+                 intent.putExtra( PlayerStatistics.ACCOUNT_ID, accountId );
+                 intent.putExtra( PlayerStatistics.PLAYER_ID, p1Id );
+                 intent.putExtra( PlayerStatistics.PLAYER_NAME, p1Watcher.getValue() );
+                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
+             } else if ( stats2 == v ) {
+                 Intent intent = new Intent(parent, PlayerStatistics.class);
+                 intent.putExtra( PlayerStatistics.ACCOUNT_ID, accountId );
+                 intent.putExtra( PlayerStatistics.PLAYER_ID, p2Id );
+                 intent.putExtra( PlayerStatistics.PLAYER_NAME, p2Watcher.getValue() );
+                 startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
              }
         }
     };
@@ -207,13 +225,18 @@ implements View.OnClickListener {
         Button btnBackup = (Button) findViewById(R.id.btnBackup);
         Button btnResults = (Button) findViewById(R.id.btnResults);
         Button btnRegenerateStatistics = (Button) findViewById(R.id.btnRegenerateStats);
+        Button btnStats1 = (Button) findViewById(R.id.btnStatsP1);
+        Button btnStats2 = (Button) findViewById(R.id.btnStatsP2);
+
 
         MenuListener listener = new MenuListener( this,
                 btnResults,
-                btnBackup, btnRegenerateStatistics, player1Id, player2Id );
+                btnBackup, btnRegenerateStatistics, btnStats1, btnStats2, player1Id, player2Id );
         btnBackup.setOnClickListener( listener );
         btnResults.setOnClickListener( listener );
         btnRegenerateStatistics.setOnClickListener( listener );
+        btnStats1.setOnClickListener( listener );
+        btnStats2.setOnClickListener( listener );
     }
 
     private void checkButtons( ) {

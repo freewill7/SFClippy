@@ -68,4 +68,12 @@ public class BattleCounter {
         }
         return ret;
     }
+
+    public int getLosses( ) {
+        return battles - wins;
+    }
+
+    public int getDifference( ) {
+        return wins - (battles - wins);
+    }
 }

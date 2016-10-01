@@ -13,6 +13,9 @@
     <string name="action_results">View Results</string>
     <string name="action_backup">Backup Data</string>
     <string name="action_regenerate_stats">Regenerate Statistics</string>
+    <string name="action_show_stats1">Show P1 Stats</string>
+    <string name="action_show_stats2">Show P2 Stats</string>
+
 
 
     <string name="action_p1_win">Player 1 Win</string>
@@ -29,4 +32,6 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="first">First</string>
+    <string name="last">Last</string>
 </resources>
