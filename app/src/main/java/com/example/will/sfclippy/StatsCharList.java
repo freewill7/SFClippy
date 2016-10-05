@@ -10,16 +10,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.example.will.sfclippy.models.BattleCounter;
 import com.example.will.sfclippy.models.CharacterPreference;
 import com.github.mikephil.charting.charts.BarChart;
-import com.github.mikephil.charting.components.AxisBase;
-import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.data.BarData;
-import com.github.mikephil.charting.data.BarDataSet;
-import com.github.mikephil.charting.data.BarEntry;
-import com.github.mikephil.charting.formatter.AxisValueFormatter;
-import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -48,6 +40,8 @@ public class StatsCharList extends Fragment {
     public static final int ORDER_BY_WINS = 1;
     public static final int ORDER_BY_LOSSES = 2;
     public static final int ORDER_BY_DIFFERENCE = 3;
+    public static final int ORDER_BY_RUN = 4;
+    public static final int ORDER_BY_PERCENT = 5;
 
     // TODO: Rename and change types of parameters
     private String mAccountId;
@@ -222,6 +216,38 @@ public class StatsCharList extends Fragment {
         }
     }
 
+    private static class ComparePercent implements  Comparator<CharacterPreference> {
+        public int compare( CharacterPreference a, CharacterPreference b ) {
+            // put best difference first
+            return b.statistics.getWinPercentage() - a.statistics.getWinPercentage();
+        }
+    }
+
+    private static class FormatPercent implements CharFormatter {
+        public void bindValue( ViewHolder vh, CharacterPreference pref ) {
+            vh.mCharName.setText( pref.name );
+            vh.mCharStat.setText(
+                    String.format(Locale.UK, "%d%%", pref.statistics.getWinPercentage())
+            );
+        }
+    }
+
+    private static class CompareRun implements  Comparator<CharacterPreference> {
+        public int compare( CharacterPreference a, CharacterPreference b ) {
+            // put best difference first
+            return b.statistics.getWinningRun() - a.statistics.getWinningRun();
+        }
+    }
+
+    private static class FormatRun implements CharFormatter {
+        public void bindValue( ViewHolder vh, CharacterPreference pref ) {
+            vh.mCharName.setText( pref.name );
+            vh.mCharStat.setText(
+                    String.format(Locale.UK, "%d win run", pref.statistics.getWinningRun())
+            );
+        }
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -237,6 +263,12 @@ public class StatsCharList extends Fragment {
         } else if ( ORDER_BY_DIFFERENCE == mStatsType ) {
             order = new CompareDifference();
             formatter = new FormatDifference();
+        } else if ( ORDER_BY_RUN == mStatsType ) {
+            order = new CompareRun();
+            formatter = new FormatRun();
+        } else if ( ORDER_BY_PERCENT == mStatsType ) {
+            order = new ComparePercent();
+            formatter = new FormatPercent();
         }
 
         mAdapter = new MyStatsAdapter( order, formatter );

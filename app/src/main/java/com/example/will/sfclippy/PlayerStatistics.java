@@ -9,6 +9,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 
 public class PlayerStatistics extends AppCompatActivity {
     private String mAccountId;
@@ -21,7 +22,10 @@ public class PlayerStatistics extends AppCompatActivity {
     private static final int CHOICE_WINS = 1;
     private static final int CHOICE_LOSSES = 2;
     private static final int CHOICE_DIFF = 3;
-    private static final int NUM_ITEMS = 4;
+    private static final int CHOICE_RUN = 4;
+    private static final int CHOICE_PERCENT = 5;
+    private static final int NUM_ITEMS = 6;
+    private static final String TAG = "PlayerStatistics";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +49,7 @@ public class PlayerStatistics extends AppCompatActivity {
 
         TabLayout mTabLayout = (TabLayout) findViewById(R.id.tabLayout);
         mTabLayout.setupWithViewPager(mViewPager);
+        mTabLayout.setTabMode( TabLayout.MODE_SCROLLABLE );
     }
 
     public static class MyAdapter extends FragmentPagerAdapter {
@@ -72,8 +77,15 @@ public class PlayerStatistics extends AppCompatActivity {
                 return StatsCharList.newInstance(mAccountId, mPlayerId, StatsCharList.ORDER_BY_WINS);
             } else if ( CHOICE_LOSSES == position ) {
                 return StatsCharList.newInstance(mAccountId, mPlayerId, StatsCharList.ORDER_BY_LOSSES);
-            } else { // if ( CHOICE_DIFF == position ) {
+            } else if ( CHOICE_DIFF == position ) {
                 return StatsCharList.newInstance(mAccountId, mPlayerId, StatsCharList.ORDER_BY_DIFFERENCE);
+            } else if ( CHOICE_RUN == position ) {
+                return StatsCharList.newInstance(mAccountId, mPlayerId, StatsCharList.ORDER_BY_RUN);
+            } else if ( CHOICE_PERCENT == position ) {
+                return StatsCharList.newInstance(mAccountId, mPlayerId, StatsCharList.ORDER_BY_PERCENT);
+            } else {
+                Log.e( TAG, "No such item at position " + position);
+                return null;
             }
         }
 
@@ -87,6 +99,10 @@ public class PlayerStatistics extends AppCompatActivity {
                 return "Losses";
             } else if ( CHOICE_DIFF == position ) {
                 return "Diff";
+            } else if ( CHOICE_RUN == position ) {
+                return "Run";
+            } else if ( CHOICE_PERCENT == position ) {
+                return "Percent";
             } else {
                 return "Unknown";
             }

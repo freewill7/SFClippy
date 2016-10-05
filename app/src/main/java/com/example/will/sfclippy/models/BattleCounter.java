@@ -76,4 +76,12 @@ public class BattleCounter {
     public int getDifference( ) {
         return wins - (battles - wins);
     }
+
+    public int getWinPercentage( ) {
+        return (100 * wins) / battles;
+    }
+
+    public int getWinningRun( ) {
+        return winsSinceLoss - lossesSinceLastWin;
+    }
 }
