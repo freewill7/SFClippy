@@ -106,19 +106,27 @@ public class CharacterRatingFragment extends DialogFragment
 
         if ( counter.winsSinceLoss > 0 ) {
             Date lastLoss = counter.lastDefeatAsDate();
-            String strLastLoss = humanDate.format(lastLoss);
+            if ( null == lastLoss ) {
+                ret = String.format( "No losses (%d battles)", counter.winsSinceLoss );
+            } else {
+                String strLastLoss = humanDate.format(lastLoss);
 
-            ret = String.format( "No losses since %s (%d battles)",
-                    strLastLoss,
-                    counter.winsSinceLoss );
+                ret = String.format("No losses since %s (%d battles)",
+                        strLastLoss,
+                        counter.winsSinceLoss);
+            }
 
         } else if ( counter.lossesSinceLastWin > 0 ) {
             Date lastVictory = counter.lastVictoryAsDate();
-            String strLastVictory = humanDate.format(lastVictory);
+            if ( null == lastVictory ) {
+                ret = String.format( "No wins (%d battles)", counter.lossesSinceLastWin);
+            } else {
+                String strLastVictory = humanDate.format(lastVictory);
 
-            ret = String.format( "No wins since %s (%d battles)",
-                    strLastVictory,
-                    counter.lossesSinceLastWin );
+                ret = String.format("No wins since %s (%d battles)",
+                        strLastVictory,
+                        counter.lossesSinceLastWin);
+            }
         }
 
         return ret;
