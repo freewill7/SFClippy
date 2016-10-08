@@ -18,6 +18,7 @@ public class CharPrefWatcher implements ValueEventListener {
     private static final String TAG = "CharPrefWatcher";
     private List<CharacterPreference> preferences;
     private final RandomSelector selector;
+    private static final String UNKNOWN = "unknown";
 
     public CharPrefWatcher( ) {
         preferences = new ArrayList<>();
@@ -26,16 +27,25 @@ public class CharPrefWatcher implements ValueEventListener {
 
     public String getRandomCharacter( ) {
         int index = selector.randomCharacter();
-        String ret = "unknown";
+        String ret = UNKNOWN;
         if ( preferences.size() > index ) {
             ret = preferences.get(index).name;
         }
         return ret;
     }
 
-    /* public String findCharacter( String input ) {
-
-    } */
+    public String matchCharacter( String input ) {
+        String ret = UNKNOWN;
+        Log.d( TAG, "Matching " + input );
+        for ( CharacterPreference pref : preferences ) {
+            if ( pref.name.equalsIgnoreCase(input) ) {
+                Log.d( TAG, "Matched " + input + " to " + pref.name );
+                ret = pref.name;
+                break;
+            }
+        }
+        return ret;
+    }
 
     @Override
     public void onDataChange(DataSnapshot snapshot) {

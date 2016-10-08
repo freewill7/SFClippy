@@ -43,8 +43,6 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
     private Button p2Button;
     private Button p1Win;
     private Button p2Win;
-    private Button btnListen;
-    private Button btnSpeak;
     private StringRefWatcher p1Watcher = new StringRefWatcher();
     private StringRefWatcher p2Watcher = new StringRefWatcher();
     private DatabaseHelper helper;
@@ -348,13 +346,6 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
         p2Button = (Button) findViewById(R.id.btnChoiceP2);
         p2Button.setOnClickListener( this );
 
-        btnListen = (Button) findViewById(R.id.btnListen);
-        btnListen.setOnClickListener( this );
-
-        btnSpeak = (Button) findViewById(R.id.btnSpeak);
-        btnSpeak.setOnClickListener( this );
-        btnSpeak.setEnabled(false);
-
         textToSpeech = new TextToSpeech( this, this );
 
         checkButtons();
@@ -364,7 +355,7 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
 
     private void announceCharacters( ) {
         // TODO check enabled
-        textToSpeech.speak( p1Choice + " versus " + p2Choice,
+        textToSpeech.speak( "Next battle is " + p1Choice + " versus " + p2Choice,
                 TextToSpeech.QUEUE_ADD,
                 null,
                 "utterance_id");
@@ -449,12 +440,6 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
             recordWin(player1Id, p1Watcher.getValue());
         } else if ( p2Win == v ) {
             recordWin(player2Id, p2Watcher.getValue());
-        } else if ( btnSpeak == v ) {
-            // TODO utterance id for checking progress
-            textToSpeech.speak( p1Choice + " vs " + p2Choice,
-                    TextToSpeech.QUEUE_ADD,
-                    null,
-                    "utterance_id");
         } else {
             Toast t = Toast.makeText( v.getContext(), "Unknown button", Toast.LENGTH_SHORT );
             t.show();
@@ -492,10 +477,34 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
             toast.show();
         } else if ( RESULT_OK == resultCode && requestCode == RECOGNISE_SPEECH) {
             List<String> results = data.getStringArrayListExtra( RecognizerIntent.EXTRA_RESULTS );
-            for ( String a : results ) {
-                Log.d( TAG, "speech " + a);
+            if ( results.size() > 0 ) {
+                String best = results.get(0);
+                Log.d( TAG, "best match is \"" + best + "\"");
+                String[] tokens = best.split( " " );
+                Log.d( TAG, "token size is " + tokens.length);
+                if ( tokens.length == 3 &&
+                        ( tokens[1].equals("vs") || tokens[1].equals("versus") ) ) {
+                    String u1 = tokens[0];
+                    String u2 = tokens[2];
+
+                    String p1 = p1PrefWatcher.matchCharacter( u1 );
+                    String p2 = p2PrefWatcher.matchCharacter( u2 );
+
+                    if ( ! p1.equals(UNKNOWN_CHOICE) && ! p2.equals(UNKNOWN_CHOICE) ) {
+                        setP1Choice( p1 );
+                        setP2Choice( p2 );
+
+                        announceCharacters();
+                    } else {
+                        Toast.makeText(this,
+                                "Problem matching \"" + u1 + "\" and \"" + u2 + "\"",
+                                Toast.LENGTH_SHORT ).show();
+                    }
+                } else {
+                    // TODO feedback touser
+                    Toast.makeText(this, best, Toast.LENGTH_SHORT ).show();
+                }
             }
-            Toast.makeText( this, results.get(0), Toast.LENGTH_SHORT).show();
         } else {
             Toast t = Toast.makeText( this.getApplicationContext(),
                     "Unrecognised Activity result", Toast.LENGTH_SHORT );
@@ -506,11 +515,12 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
     @Override
     public void onInit( int status ) {
         if ( status == TextToSpeech.SUCCESS ) {
-            btnSpeak.setEnabled(true);
+            // btnSpeak.setEnabled(true);
         } else {
             Toast.makeText(this, "Failed to initialise speech", Toast.LENGTH_SHORT);
         }
     }
+
     @Override
     public void onDestroy( ) {
         p1NameRef.removeEventListener(p1Watcher);
