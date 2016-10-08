@@ -20,6 +20,7 @@
 
     <string name="action_p1_win">Player 1 Win</string>
     <string name="action_p2_win">Player 2 Win</string>
+    <string name="action_listen">Listen</string>
     <string name="label_p1_choice">Player 1 Choice:</string>
     <string name="label_p2_choice">Player 2 Choice:</string>
     <string name="action_p1_choose">Choose</string>

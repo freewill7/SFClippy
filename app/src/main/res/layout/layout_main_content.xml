@@ -109,4 +109,21 @@
         android:id="@+id/lblFact3"
         android:padding="8dp" />
 
+    <Button
+        android:text="Speak"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/btnWinP1"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="8dp"
+        android:id="@+id/btnSpeak" />
+
+    <Button
+        android:text="Listen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/btnSpeak"
+        android:layout_alignParentEnd="true"
+        android:id="@+id/btnListen" />
+
 </RelativeLayout>

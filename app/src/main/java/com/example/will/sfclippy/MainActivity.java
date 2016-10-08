@@ -4,59 +4,63 @@ import android.app.Activity;
 import android.app.ActivityOptions;
 import android.content.Intent;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.NavUtils;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageButton;
-import android.widget.TextSwitcher;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ViewSwitcher;
 
 import com.example.will.sfclippy.models.BattleCounter;
-import com.example.will.sfclippy.models.BattleResult;
-import com.example.will.sfclippy.models.PlayerInfo;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
-implements View.OnClickListener {
+implements View.OnClickListener, TextToSpeech.OnInitListener {
     private DrawerLayout mainView;
     private String accountId;
     private String player1Id;
     private String player2Id;
-    private String p1Choice = "unknown";
-    private String p2Choice = "unknown";
+    private static final String UNKNOWN_CHOICE = "unknown";
+    private String p1Choice = UNKNOWN_CHOICE;
+    private String p2Choice = UNKNOWN_CHOICE;
     private Button p1Button;
     private Button p2Button;
     private Button p1Win;
     private Button p2Win;
+    private Button btnListen;
+    private Button btnSpeak;
     private StringRefWatcher p1Watcher = new StringRefWatcher();
     private StringRefWatcher p2Watcher = new StringRefWatcher();
-    private static final String UNKNOWN_CHOICE = "unknown";
     private DatabaseHelper helper;
     private TextView lblFact1;
     private TextView lblFact2;
     private TextView lblFact3;
+    private TextToSpeech textToSpeech;
+    private DatabaseReference p1PrefRef;
+    final private CharPrefWatcher p1PrefWatcher = new CharPrefWatcher();
+    private DatabaseReference p2PrefRef;
+    final private CharPrefWatcher p2PrefWatcher = new CharPrefWatcher();
 
     static public final int GET_P1_CHARACTER = 1;
     static public final int GET_P2_CHARACTER = 2;
     static public final int DO_BACKUP = 3;
+    static public final int RECOGNISE_SPEECH = 4;
 
     public final static String ACCOUNT_ID_LABEL = "account_id";
     public final static String PLAYER1_ID_LABEL = "player1_id";
@@ -267,6 +271,12 @@ implements View.OnClickListener {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main_activity, menu);
+        return true;
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -322,6 +332,11 @@ implements View.OnClickListener {
         p2NameRef = helper.getPlayerNameRef( player2Id );
         p2NameRef.addValueEventListener( p2Watcher );
 
+        p1PrefRef = helper.getPlayerPrefsRef( player1Id );
+        p1PrefRef.addValueEventListener( p1PrefWatcher );
+        p2PrefRef = helper.getPlayerPrefsRef( player2Id );
+        p2PrefRef.addValueEventListener( p2PrefWatcher );
+
         overallStatsRef = helper.getPlayerVsPlayerRef( player1Id, player2Id );
         overallStatsWatcher = new OverallStatsWatcher( lblFact1, p1Watcher, p2Watcher );
         overallStatsRef.addValueEventListener( overallStatsWatcher );
@@ -333,9 +348,57 @@ implements View.OnClickListener {
         p2Button = (Button) findViewById(R.id.btnChoiceP2);
         p2Button.setOnClickListener( this );
 
+        btnListen = (Button) findViewById(R.id.btnListen);
+        btnListen.setOnClickListener( this );
+
+        btnSpeak = (Button) findViewById(R.id.btnSpeak);
+        btnSpeak.setOnClickListener( this );
+        btnSpeak.setEnabled(false);
+
+        textToSpeech = new TextToSpeech( this, this );
+
         checkButtons();
 
         setupDrawer();
+    }
+
+    private void announceCharacters( ) {
+        // TODO check enabled
+        textToSpeech.speak( p1Choice + " versus " + p2Choice,
+                TextToSpeech.QUEUE_ADD,
+                null,
+                "utterance_id");
+    }
+
+    @Override
+    public boolean onOptionsItemSelected( MenuItem item ) {
+        switch ( item.getItemId() ) {
+            case R.id.action_lucky:
+
+                String choice1 = p1PrefWatcher.getRandomCharacter();
+                if ( ! choice1.equals(UNKNOWN_CHOICE) ) {
+                    setP1Choice(choice1);
+                }
+
+                String choice2 = p2PrefWatcher.getRandomCharacter();
+                if ( ! choice2.equals(UNKNOWN_CHOICE) ) {
+                    setP2Choice(choice2);
+                }
+
+                announceCharacters();
+
+                return true;
+            case R.id.action_listen:
+                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                // Start the activity, the intent will be populated with the speech text
+                startActivityForResult(intent, RECOGNISE_SPEECH);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+
+        }
     }
 
     private void recordWin(String winnerId, String winnerName ) {
@@ -386,31 +449,53 @@ implements View.OnClickListener {
             recordWin(player1Id, p1Watcher.getValue());
         } else if ( p2Win == v ) {
             recordWin(player2Id, p2Watcher.getValue());
+        } else if ( btnSpeak == v ) {
+            // TODO utterance id for checking progress
+            textToSpeech.speak( p1Choice + " vs " + p2Choice,
+                    TextToSpeech.QUEUE_ADD,
+                    null,
+                    "utterance_id");
         } else {
             Toast t = Toast.makeText( v.getContext(), "Unknown button", Toast.LENGTH_SHORT );
             t.show();
         }
     }
 
+    private void setP1Choice( String choice ) {
+        p1Choice = choice;
+        p1Button.setText( p1Choice );
+
+        checkButtons();
+    }
+
+    private void setP2Choice( String choice ) {
+        p2Choice = choice;
+        p2Button.setText( p2Choice );
+
+        checkButtons();
+    }
+
     @Override
     public void onActivityResult( int requestCode, int resultCode, Intent data ) {
         if ( requestCode == GET_P1_CHARACTER ) {
             if ( null != data ) {
-                p1Choice = data.getStringExtra( CharacterSelectActivity.GET_CHARACTER_PROPERTY );
-                p1Button.setText( p1Choice );
-
-                checkButtons();
+                String choice =  data.getStringExtra( CharacterSelectActivity.GET_CHARACTER_PROPERTY );
+                setP1Choice( choice );
             }
         } else if ( requestCode == GET_P2_CHARACTER ) {
             if (null != data) {
-                p2Choice = data.getStringExtra(CharacterSelectActivity.GET_CHARACTER_PROPERTY);
-                p2Button.setText(p2Choice);
-
-                checkButtons();
+                String choice = data.getStringExtra(CharacterSelectActivity.GET_CHARACTER_PROPERTY);
+                setP2Choice(choice);
             }
         } else if ( requestCode == DO_BACKUP ) {
-            Toast toast = Toast.makeText( this, "Backup complete", Toast.LENGTH_SHORT );
+            Toast toast = Toast.makeText(this, "Backup complete", Toast.LENGTH_SHORT);
             toast.show();
+        } else if ( RESULT_OK == resultCode && requestCode == RECOGNISE_SPEECH) {
+            List<String> results = data.getStringArrayListExtra( RecognizerIntent.EXTRA_RESULTS );
+            for ( String a : results ) {
+                Log.d( TAG, "speech " + a);
+            }
+            Toast.makeText( this, results.get(0), Toast.LENGTH_SHORT).show();
         } else {
             Toast t = Toast.makeText( this.getApplicationContext(),
                     "Unrecognised Activity result", Toast.LENGTH_SHORT );
@@ -419,13 +504,25 @@ implements View.OnClickListener {
     }
 
     @Override
+    public void onInit( int status ) {
+        if ( status == TextToSpeech.SUCCESS ) {
+            btnSpeak.setEnabled(true);
+        } else {
+            Toast.makeText(this, "Failed to initialise speech", Toast.LENGTH_SHORT);
+        }
+    }
+    @Override
     public void onDestroy( ) {
         p1NameRef.removeEventListener(p1Watcher);
         p2NameRef.removeEventListener(p2Watcher);
+        p1PrefRef.removeEventListener(p1PrefWatcher);
+        p2PrefRef.removeEventListener(p2PrefWatcher);
         overallStatsRef.removeEventListener( overallStatsWatcher );
         if ( null != charVsCharRef ) {
             charVsCharRef.removeEventListener(charVsCharWatcher);
         }
+
+        textToSpeech.shutdown();
 
         super.onDestroy();
     }

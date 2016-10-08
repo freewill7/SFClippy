@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_lucky"
+        android:icon="@drawable/ic_assistant_24dp"
+        android:title="@string/action_lucky"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/action_listen"
+        android:icon="@drawable/ic_keyboard_voice_24dp"
+        android:title="@string/action_listen"
+        app:showAsAction="ifRoom"/>
+</menu>
