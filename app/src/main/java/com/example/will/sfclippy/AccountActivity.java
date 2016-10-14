@@ -10,6 +10,7 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.will.sfclippy.models.PlayerInfo;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
@@ -46,13 +47,17 @@ implements GoogleApiClient.ConnectionCallbacks,
 
     private TextView progressLabel;
 
-    private void launchMainActivity( String accountId, String p1Id, String p2Id ) {
-        Log.d( TAG, "Launch Main activity " + p1Id + " " + p2Id );
+    private void launchMainActivity( String accountId, PlayerInfo p1Info, PlayerInfo p2Info ) {
+        Log.d( TAG, "Launch Main activity "
+                + p1Info.playerId + " (" + p1Info.playerName + "), "
+                + p2Info.playerId + " (" + p2Info.playerName + ")" );
 
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra( MainActivity.ACCOUNT_ID_LABEL, accountId );
-        intent.putExtra( MainActivity.PLAYER1_ID_LABEL, p1Id );
-        intent.putExtra( MainActivity.PLAYER2_ID_LABEL, p2Id );
+        intent.putExtra( MainActivity.PLAYER1_ID_LABEL, p1Info.playerId );
+        intent.putExtra( MainActivity.PLAYER1_NAME_LABEL, p1Info.playerName );
+        intent.putExtra( MainActivity.PLAYER2_ID_LABEL, p2Info.playerId );
+        intent.putExtra( MainActivity.PLAYER2_NAME_LABEL, p2Info.playerName );
 
         startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
         this.finish();
@@ -64,8 +69,8 @@ implements GoogleApiClient.ConnectionCallbacks,
 
         helper.fetchOrInitialisePlayers(new DatabaseHelper.PlayersCallback() {
             @Override
-            public void playersInitialised(String p1Id, String p2Id) {
-                launchMainActivity( accountId, p1Id, p2Id );
+            public void playersInitialised(PlayerInfo p1Info, PlayerInfo p2Info) {
+                launchMainActivity( accountId, p1Info, p2Info );
             }
         });
     }

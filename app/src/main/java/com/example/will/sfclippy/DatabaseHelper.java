@@ -6,6 +6,7 @@ import android.util.Pair;
 import com.example.will.sfclippy.models.BattleCounter;
 import com.example.will.sfclippy.models.BattleResult;
 import com.example.will.sfclippy.models.CharacterPreference;
+import com.example.will.sfclippy.models.PlayerInfo;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -53,10 +54,6 @@ public class DatabaseHelper {
         return mUserHome.child( "results" );
     }
 
-    public DatabaseReference getPlayerNameRef( String playerId ) {
-        return getPlayersDirReference().child( playerId ).child( "playerName" );
-    }
-
     public DatabaseReference getPlayerPrefsRef( String playerId ) {
         return getPreferencesDirReference().child( playerId );
     }
@@ -66,12 +63,8 @@ public class DatabaseHelper {
     }
 
     public interface PlayersCallback {
-        void playersInitialised( String p1Id, String p2Id );
+        void playersInitialised( PlayerInfo p1Info, PlayerInfo p2Info );
     };
-
-    private void initialiseUser( DatabaseReference ref, String playerName ) {
-        ref.setValue( playerName );
-    }
 
     public void fetchOrInitialisePlayers( final PlayersCallback callback ) {
         final DatabaseReference players = getPlayersDirReference();
@@ -80,28 +73,30 @@ public class DatabaseHelper {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if ( null == dataSnapshot.getValue() ) {
                     Log.d( TAG, "Bootstrapping users");
-                    DatabaseReference p1 = players.push();
-                    initialiseUser( p1, "Red Panda");
+                    DatabaseReference p1Ref = players.push();
+                    PlayerInfo p1Val = new PlayerInfo(p1Ref.getKey(), "Red Panda");
+                    p1Ref.setValue( p1Val );
 
-                    DatabaseReference p2 = players.push();
-                    initialiseUser( p2, "Blue Goose");
+                    DatabaseReference p2Ref = players.push();
+                    PlayerInfo p2Val = new PlayerInfo(p2Ref.getKey(), "Blue Goose");
+                    p2Ref.setValue( p2Val );
 
-                    callback.playersInitialised( p1.getKey(), p2.getKey() );
+                    callback.playersInitialised( p1Val, p2Val );
                 } else {
                     Log.d( TAG, "Fetching users");
                     players.removeEventListener(this);
-                    List<String> playerIds = new ArrayList<>();
+                    List<PlayerInfo> playerInfo = new ArrayList<>();
                     for ( DataSnapshot child : dataSnapshot.getChildren() ) {
-                        playerIds.add( child.getKey() );
+                        playerInfo.add( child.getValue(PlayerInfo.class) );
                     }
 
-                    callback.playersInitialised( playerIds.get(0), playerIds.get(1) );
+                    callback.playersInitialised( playerInfo.get(0), playerInfo.get(1) );
                 }
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                // TODO
+                Log.d( TAG, "Fetching players issue", databaseError.toException());
             }
         });
     }

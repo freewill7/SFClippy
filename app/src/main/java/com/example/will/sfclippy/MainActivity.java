@@ -36,6 +36,8 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
     private String accountId;
     private String player1Id;
     private String player2Id;
+    private String player1Name;
+    private String player2Name;
     private static final String UNKNOWN_CHOICE = "unknown";
     private String p1Choice = UNKNOWN_CHOICE;
     private String p2Choice = UNKNOWN_CHOICE;
@@ -43,8 +45,6 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
     private Button p2Button;
     private Button p1Win;
     private Button p2Win;
-    private StringRefWatcher p1Watcher = new StringRefWatcher();
-    private StringRefWatcher p2Watcher = new StringRefWatcher();
     private DatabaseHelper helper;
     private TextView lblFact1;
     private TextView lblFact2;
@@ -62,12 +62,12 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
 
     public final static String ACCOUNT_ID_LABEL = "account_id";
     public final static String PLAYER1_ID_LABEL = "player1_id";
+    public final static String PLAYER1_NAME_LABEL = "player1_name";
     public final static String PLAYER2_ID_LABEL = "player2_id";
+    public final static String PLAYER2_NAME_LABEL = "player2_name";
 
     private final static String TAG = "MainActivity";
 
-    private DatabaseReference p1NameRef;
-    private DatabaseReference p2NameRef;
     private OverallStatsWatcher overallStatsWatcher;
     private DatabaseReference overallStatsRef;
     private CharVsCharWatcher charVsCharWatcher;
@@ -122,13 +122,13 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
                  Intent intent = new Intent(parent, PlayerStatistics.class);
                  intent.putExtra( PlayerStatistics.ACCOUNT_ID, accountId );
                  intent.putExtra( PlayerStatistics.PLAYER_ID, p1Id );
-                 intent.putExtra( PlayerStatistics.PLAYER_NAME, p1Watcher.getValue() );
+                 intent.putExtra( PlayerStatistics.PLAYER_NAME, player1Name );
                  startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
              } else if ( stats2 == v ) {
                  Intent intent = new Intent(parent, PlayerStatistics.class);
                  intent.putExtra( PlayerStatistics.ACCOUNT_ID, accountId );
                  intent.putExtra( PlayerStatistics.PLAYER_ID, p2Id );
-                 intent.putExtra( PlayerStatistics.PLAYER_NAME, p2Watcher.getValue() );
+                 intent.putExtra( PlayerStatistics.PLAYER_NAME, player2Name );
                  startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
              }
         }
@@ -136,12 +136,12 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
 
     private static class OverallStatsWatcher implements ValueEventListener {
         private final TextView lbl;
-        private final StringRefWatcher p1Name;
-        private final StringRefWatcher p2Name;
+        private final String p1Name;
+        private final String p2Name;
         private static final String TAG = "OverallStatsWatcher";
         private static final String DEFAULT = "No previous results";
 
-        public OverallStatsWatcher( TextView lbl, StringRefWatcher p1Name, StringRefWatcher p2Name ) {
+        public OverallStatsWatcher( TextView lbl, String p1Name, String p2Name ) {
             this.lbl = lbl;
             this.p1Name = p1Name;
             this.p2Name = p2Name;
@@ -156,7 +156,7 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
                 if ( null != counter ) {
                     String msg = String.format(Locale.UK,
                             "%s wins %d%% of battles (%d vs %d)",
-                            p1Name.getValue(),
+                            p1Name,
                             (counter.wins * 100) / counter.battles,
                             counter.wins, (counter.battles - counter.wins) );
                     lbl.setText( msg );
@@ -166,21 +166,21 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
 
         @Override
         public void onCancelled( DatabaseError err ) {
-            Log.e( TAG, "Cancelled", err.toException() );
+            Log.e( TAG, "Stats watcher cancelled", err.toException() );
         }
     }
 
     private static class CharVsCharWatcher implements ValueEventListener {
         private final TextView lbl;
-        private final StringRefWatcher p1Name;
-        private final StringRefWatcher p2Name;
+        private final String p1Name;
+        private final String p2Name;
         private static final String TAG = "OverallStatsWatcher";
         private static final String DEFAULT = "No previous pairing";
 
 
         public CharVsCharWatcher( TextView lbl,
-                                  StringRefWatcher p1Name,
-                                  StringRefWatcher p2Name ) {
+                                  String p1Name,
+                                  String p2Name ) {
             this.lbl = lbl;
             this.p1Name = p1Name;
             this.p2Name = p2Name;
@@ -201,11 +201,11 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
                     if ( wins > losses ) {
                         msg = String.format(Locale.UK,
                                 "%s wins %d%% encounters (%d vs %d)",
-                                p1Name.getValue(), (100 * wins) / total, wins, losses );
+                                p1Name, (100 * wins) / total, wins, losses );
                     } else if ( losses > wins ) {
                         msg = String.format( Locale.UK,
                                 "%s wins %d%% encounters (%d vs %d)",
-                                p2Name.getValue(), (100 * losses) / total, losses, wins );
+                                p2Name, (100 * losses) / total, losses, wins );
                     } else {
                         msg = String.format( Locale.UK,
                                 "Even encounter history (%d vs %d)",
@@ -219,7 +219,7 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
 
         @Override
         public void onCancelled( DatabaseError err ) {
-            Log.e( TAG, "Cancelled", err.toException() );
+            Log.e( TAG, "Cancelled charvschar", err.toException() );
         }
     }
 
@@ -265,7 +265,9 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
         super.onSaveInstanceState( outState );
         outState.putString( ACCOUNT_ID_LABEL, accountId );
         outState.putString( PLAYER1_ID_LABEL, player1Id );
+        outState.putString( PLAYER1_NAME_LABEL, player1Name );
         outState.putString( PLAYER2_ID_LABEL, player2Id );
+        outState.putString( PLAYER2_NAME_LABEL, player2Name );
     }
 
     @Override
@@ -278,6 +280,24 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // get id associated with the battle
+        // first from intent... then from saved instance state
+        Intent intent = getIntent();
+        accountId = intent.getStringExtra( ACCOUNT_ID_LABEL );
+        player1Id = intent.getStringExtra( PLAYER1_ID_LABEL );
+        player1Name = intent.getStringExtra( PLAYER1_NAME_LABEL );
+        player2Id = intent.getStringExtra( PLAYER2_ID_LABEL );
+        player2Name = intent.getStringExtra( PLAYER2_NAME_LABEL );
+        if ( null == player1Id || null == player2Id ) {
+            if ( null != savedInstanceState ) {
+                Log.d( TAG, "Restoring from saved state");
+                player1Id = savedInstanceState.getString( PLAYER1_ID_LABEL );
+                player1Name = savedInstanceState.getString( PLAYER1_NAME_LABEL );
+                player2Id = savedInstanceState.getString( PLAYER2_ID_LABEL );
+                player2Name = savedInstanceState.getString( PLAYER2_NAME_LABEL );
+            }
+        }
 
         // set-up action bar
         Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
@@ -293,42 +313,22 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
 
         // set-up buttons
         TextView p1Text = (TextView) findViewById(R.id.textP1);
+        p1Text.setText( player1Name + " choice:");
         TextView p2Text = (TextView) findViewById(R.id.textP2);
+        p2Text.setText( player2Name + " choice:");
         p1Win = (Button) findViewById(R.id.btnWinP1);
+        p1Win.setText( player1Name + " win");
         p1Win.setOnClickListener( this );
         p2Win = (Button) findViewById(R.id.btnWinP2);
+        p2Win.setText( player2Name + " win");
         p2Win.setOnClickListener( this );
-
-        // set up views that show player name
-        p1Watcher.registerTextView( p1Text, "%s choice:");
-        p1Watcher.registerTextView( p1Win, "%s win" );
-        p2Watcher.registerTextView( p2Text, "%s choice:");
-        p2Watcher.registerTextView( p2Win, "%s win" );
 
         // get facts
         lblFact1 = (TextView) findViewById(R.id.lblFact1);
         lblFact2 = (TextView) findViewById(R.id.lblFact2);
         lblFact3 = (TextView) findViewById(R.id.lblFact3);
 
-        // get id associated with the battle
-        // first from intent... then from saved instance state
-        Intent intent = getIntent();
-        accountId = intent.getStringExtra( ACCOUNT_ID_LABEL );
-        player1Id = intent.getStringExtra( PLAYER1_ID_LABEL );
-        player2Id = intent.getStringExtra( PLAYER2_ID_LABEL );
-        if ( null == player1Id || null == player2Id ) {
-            if ( null != savedInstanceState ) {
-                Log.d( TAG, "Restoring from saved state");
-                player1Id = savedInstanceState.getString( PLAYER1_ID_LABEL );
-                player2Id = savedInstanceState.getString( PLAYER2_ID_LABEL );
-            }
-        }
-
         helper = new DatabaseHelper( FirebaseDatabase.getInstance(), accountId);
-        p1NameRef = helper.getPlayerNameRef( player1Id );
-        p1NameRef.addValueEventListener( p1Watcher );
-        p2NameRef = helper.getPlayerNameRef( player2Id );
-        p2NameRef.addValueEventListener( p2Watcher );
 
         p1PrefRef = helper.getPlayerPrefsRef( player1Id );
         p1PrefRef.addValueEventListener( p1PrefWatcher );
@@ -336,9 +336,9 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
         p2PrefRef.addValueEventListener( p2PrefWatcher );
 
         overallStatsRef = helper.getPlayerVsPlayerRef( player1Id, player2Id );
-        overallStatsWatcher = new OverallStatsWatcher( lblFact1, p1Watcher, p2Watcher );
+        overallStatsWatcher = new OverallStatsWatcher( lblFact1, player1Name, player2Name );
         overallStatsRef.addValueEventListener( overallStatsWatcher );
-        charVsCharWatcher = new CharVsCharWatcher( lblFact2, p1Watcher, p2Watcher );
+        charVsCharWatcher = new CharVsCharWatcher( lblFact2, player1Name, player2Name );
 
         p1Button = (Button) findViewById(R.id.btnChoiceP1);
         p1Button.setOnClickListener( this );
@@ -423,7 +423,7 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
 
             intent.putExtra( CharacterSelectActivity.ACCOUNT_ID, accountId );
             intent.putExtra( CharacterSelectActivity.PLAYER_ID, player1Id );
-            intent.putExtra( CharacterSelectActivity.TITLE, "Choose player 1");
+            intent.putExtra( CharacterSelectActivity.TITLE, player1Name + " choice");
 
             startActivityForResult(intent, GET_P1_CHARACTER,
                     ActivityOptions.makeSceneTransitionAnimation(this).toBundle() );
@@ -432,14 +432,14 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
 
             intent.putExtra( CharacterSelectActivity.ACCOUNT_ID, accountId );
             intent.putExtra( CharacterSelectActivity.PLAYER_ID, player2Id );
-            intent.putExtra( CharacterSelectActivity.TITLE, "Choose player 2");
+            intent.putExtra( CharacterSelectActivity.TITLE, player2Name + " choice");
 
             startActivityForResult(intent, GET_P2_CHARACTER,
                     ActivityOptions.makeSceneTransitionAnimation(this).toBundle() );
         } else if ( p1Win == v ) {
-            recordWin(player1Id, p1Watcher.getValue());
+            recordWin(player1Id, player1Name );
         } else if ( p2Win == v ) {
-            recordWin(player2Id, p2Watcher.getValue());
+            recordWin(player2Id, player2Name );
         } else {
             Toast t = Toast.makeText( v.getContext(), "Unknown button", Toast.LENGTH_SHORT );
             t.show();
@@ -501,7 +501,7 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
                                 Toast.LENGTH_SHORT ).show();
                     }
                 } else {
-                    // TODO feedback touser
+                    // TODO feedback to user
                     Toast.makeText(this, best, Toast.LENGTH_SHORT ).show();
                 }
             }
@@ -523,8 +523,6 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
 
     @Override
     public void onDestroy( ) {
-        p1NameRef.removeEventListener(p1Watcher);
-        p2NameRef.removeEventListener(p2Watcher);
         p1PrefRef.removeEventListener(p1PrefWatcher);
         p2PrefRef.removeEventListener(p2PrefWatcher);
         overallStatsRef.removeEventListener( overallStatsWatcher );
