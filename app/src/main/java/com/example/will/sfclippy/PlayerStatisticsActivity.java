@@ -20,6 +20,7 @@ implements StatsCharList.ViewCharacterResults {
     public static final String ACCOUNT_ID = "account_id";
     public static final String PLAYER_ID = "player_id";
     public static final String PLAYER_NAME = "player_name";
+    private static final int CHOICE_PLAYED = 0;
     private static final int CHOICE_WINS = 1;
     private static final int CHOICE_LOSSES = 2;
     private static final int CHOICE_DIFF = 3;
@@ -72,8 +73,8 @@ implements StatsCharList.ViewCharacterResults {
 
         @Override
         public Fragment getItem(int position) {
-            if ( 0 == position) {
-                return StatsBattleDistribution.newInstance(mAccountId, mPlayerId);
+            if ( CHOICE_PLAYED == position) {
+                return StatsCharList.newInstance(mAccountId, mPlayerId, StatsCharList.ORDER_BY_PLAYED);
             } else if ( CHOICE_WINS == position ){
                 return StatsCharList.newInstance(mAccountId, mPlayerId, StatsCharList.ORDER_BY_WINS);
             } else if ( CHOICE_LOSSES == position ) {
@@ -92,8 +93,8 @@ implements StatsCharList.ViewCharacterResults {
 
         @Override
         public CharSequence getPageTitle(int position) {
-            if ( 0 == position ) {
-                return "Choices";
+            if ( CHOICE_PLAYED == position ) {
+                return "Played";
             } else if ( CHOICE_WINS == position ) {
                 return "Wins";
             } else if ( CHOICE_LOSSES == position ) {

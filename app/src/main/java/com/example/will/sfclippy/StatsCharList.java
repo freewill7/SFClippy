@@ -44,6 +44,7 @@ public class StatsCharList extends Fragment {
     public static final int ORDER_BY_DIFFERENCE = 3;
     public static final int ORDER_BY_RUN = 4;
     public static final int ORDER_BY_PERCENT = 5;
+    public static final int ORDER_BY_PLAYED = 6;
 
     // TODO: Rename and change types of parameters
     private String mAccountId;
@@ -269,6 +270,22 @@ public class StatsCharList extends Fragment {
         }
     }
 
+    private static class ComparePlayed implements  Comparator<CharacterPreference> {
+        public int compare( CharacterPreference a, CharacterPreference b ) {
+            // put best difference first
+            return b.statistics.battles - a.statistics.battles;
+        }
+    }
+
+    private static class FormatPlayed implements CharFormatter {
+        public void bindValue( ViewHolder vh, CharacterPreference pref ) {
+            vh.mCharName.setText( pref.name );
+            vh.mCharStat.setText(
+                    String.format(Locale.UK, "%d outings", pref.statistics.battles)
+            );
+        }
+    }
+
     @Override
     public void onAttach( Context context ) {
         super.onAttach(context);
@@ -301,6 +318,9 @@ public class StatsCharList extends Fragment {
         } else if ( ORDER_BY_PERCENT == mStatsType ) {
             order = new ComparePercent();
             formatter = new FormatPercent();
+        } else if ( ORDER_BY_PLAYED == mStatsType ) {
+            order = new ComparePlayed();
+            formatter = new FormatPlayed();
         }
 
         mAdapter = new MyStatsAdapter( mController, order, formatter );
