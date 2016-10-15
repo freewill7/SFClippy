@@ -17,7 +17,6 @@
     <string name="action_show_stats2">Show P2 Stats</string>
 
 
-
     <string name="action_p1_win">Player 1 Win</string>
     <string name="action_p2_win">Player 2 Win</string>
     <string name="action_listen">Listen</string>
@@ -30,9 +29,10 @@
     <string name="label_user_rating">User rating:</string>
     <string name="action_select_character">Select Character</string>
 
+    <string name="helloselect">Hello and select</string>
+    <string name="hello_battle_list">Hello battle list</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="first">First</string>
-    <string name="last">Last</string>
+    <string name="charresult_win">Win/Lose</string>
+    <string name="charresult_date">Date</string>
+    <string name="charresult_char">Character</string>
 </resources>

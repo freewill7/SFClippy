@@ -36,7 +36,7 @@
         <activity
             android:name=".CharacterPreferenceActivity"
             android:parentActivityName=".MainActivity" />
-        <activity android:name=".PlayerStatistics"></activity>
+        <activity android:name=".PlayerStatisticsActivity"></activity>
     </application>
 
 </manifest>

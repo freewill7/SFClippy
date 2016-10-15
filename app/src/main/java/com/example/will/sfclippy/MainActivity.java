@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.NavUtils;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -119,16 +118,16 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
                      }
                  });
              } else if ( stats1 == v ) {
-                 Intent intent = new Intent(parent, PlayerStatistics.class);
-                 intent.putExtra( PlayerStatistics.ACCOUNT_ID, accountId );
-                 intent.putExtra( PlayerStatistics.PLAYER_ID, p1Id );
-                 intent.putExtra( PlayerStatistics.PLAYER_NAME, player1Name );
+                 Intent intent = new Intent(parent, PlayerStatisticsActivity.class);
+                 intent.putExtra( PlayerStatisticsActivity.ACCOUNT_ID, accountId );
+                 intent.putExtra( PlayerStatisticsActivity.PLAYER_ID, p1Id );
+                 intent.putExtra( PlayerStatisticsActivity.PLAYER_NAME, player1Name );
                  startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
              } else if ( stats2 == v ) {
-                 Intent intent = new Intent(parent, PlayerStatistics.class);
-                 intent.putExtra( PlayerStatistics.ACCOUNT_ID, accountId );
-                 intent.putExtra( PlayerStatistics.PLAYER_ID, p2Id );
-                 intent.putExtra( PlayerStatistics.PLAYER_NAME, player2Name );
+                 Intent intent = new Intent(parent, PlayerStatisticsActivity.class);
+                 intent.putExtra( PlayerStatisticsActivity.ACCOUNT_ID, accountId );
+                 intent.putExtra( PlayerStatisticsActivity.PLAYER_ID, p2Id );
+                 intent.putExtra( PlayerStatisticsActivity.PLAYER_NAME, player2Name );
                  startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
              }
         }

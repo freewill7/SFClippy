@@ -11,7 +11,8 @@ import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 
-public class PlayerStatistics extends AppCompatActivity {
+public class PlayerStatisticsActivity extends AppCompatActivity
+implements StatsCharList.ViewCharacterResults {
     private String mAccountId;
     private String mPlayerId;
     private String mPlayerName;
@@ -107,5 +108,14 @@ public class PlayerStatistics extends AppCompatActivity {
                 return "Unknown";
             }
         }
+    }
+
+    @Override
+    public void viewCharacterResults( String character ) {
+        StatsBattleList frag = StatsBattleList.newInstance(
+                mAccountId,
+                mPlayerId,
+                character );
+        frag.show( getFragmentManager(), "frame name" );
     }
 }

@@ -55,6 +55,16 @@ public class BattleResult {
         }
     }
 
+    public String opponentFor( String playerId ) {
+        if ( playerId.equals(p1Id) ) {
+            return p2Character;
+        } else if ( playerId.equals(p2Id)) {
+            return p1Character;
+        } else {
+            return null;
+        }
+    }
+
     public Date dateAsDate( ) {
         Date ret = null;
         try {

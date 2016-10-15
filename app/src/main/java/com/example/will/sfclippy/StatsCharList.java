@@ -1,5 +1,7 @@
 package com.example.will.sfclippy;
 
+import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -48,25 +50,40 @@ public class StatsCharList extends Fragment {
     private String mPlayerId;
     private DatabaseHelper mHelper;
     private DatabaseReference mPreferencesDir;
-    private BarChart mBarChart;
     private int mStatsType;
     private MyStatsAdapter mAdapter;
+    private ViewCharacterResults mController;
 
     public StatsCharList() {
         // Required empty public constructor
+    }
+
+    public interface ViewCharacterResults {
+        void viewCharacterResults( String characterName );
     }
 
     /**
      * One of the views within the RecyclerView.
      */
     public static class ViewHolder extends RecyclerView.ViewHolder {
+        private final ViewCharacterResults mParent;
+        public String mCharacterName;
         public TextView mCharName;
         public TextView mCharStat;
 
-        public ViewHolder( View view ) {
+        public ViewHolder(ViewCharacterResults parent, View view ) {
             super(view);
+            mParent = parent;
             mCharName = (TextView) view.findViewById(R.id.lblCharacterName);
             mCharStat = (TextView) view.findViewById(R.id.lblCharacterStat);
+
+            view.setClickable(true);
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mParent.viewCharacterResults(mCharacterName);
+                }
+            });
         }
     }
 
@@ -83,9 +100,12 @@ public class StatsCharList extends Fragment {
         private static final String TAG = "MySelectAdapter";
         private final Comparator<CharacterPreference> mOrderer;
         private final CharFormatter mFormatter;
+        private final ViewCharacterResults mController;
 
-        public MyStatsAdapter( Comparator<CharacterPreference> orderer,
+        public MyStatsAdapter( ViewCharacterResults controller,
+                               Comparator<CharacterPreference> orderer,
                                CharFormatter formatter ) {
+            mController = controller;
             mOrderer = orderer;
             mFormatter = formatter;
         }
@@ -120,13 +140,14 @@ public class StatsCharList extends Fragment {
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
             View view = (View) LayoutInflater.from( parent.getContext() )
                     .inflate( R.layout.layout_char_stat, parent, false );
-            ViewHolder vh = new ViewHolder( view );
+            ViewHolder vh = new ViewHolder( mController, view );
             return vh;
         }
 
         @Override
         public void onBindViewHolder( ViewHolder holder, int position ) {
             CharacterPreference pref = mDataset.get(position);
+            holder.mCharacterName = pref.name;
             mFormatter.bindValue( holder, pref );
         }
 
@@ -249,6 +270,17 @@ public class StatsCharList extends Fragment {
     }
 
     @Override
+    public void onAttach( Context context ) {
+        super.onAttach(context);
+        try {
+            mController = (ViewCharacterResults) context;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(
+                    context.toString() + " must implement ViewCharacterResults");
+        }
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
@@ -271,7 +303,7 @@ public class StatsCharList extends Fragment {
             formatter = new FormatPercent();
         }
 
-        mAdapter = new MyStatsAdapter( order, formatter );
+        mAdapter = new MyStatsAdapter( mController, order, formatter );
         mPreferencesDir.addValueEventListener( mAdapter );
 
         RecyclerView recyclerView = (RecyclerView) v.findViewById(R.id.listStats);
