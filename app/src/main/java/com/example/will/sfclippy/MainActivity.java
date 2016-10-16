@@ -63,8 +63,10 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
     public final static String ACCOUNT_ID_LABEL = "account_id";
     public final static String PLAYER1_ID_LABEL = "player1_id";
     public final static String PLAYER1_NAME_LABEL = "player1_name";
+    public final static String PLAYER1_CHOICE_LABEL = "player1_choice";
     public final static String PLAYER2_ID_LABEL = "player2_id";
     public final static String PLAYER2_NAME_LABEL = "player2_name";
+    public final static String PLAYER2_CHOICE_LABEL = "player2_choice";
 
     private final static String TAG = "MainActivity";
 
@@ -266,8 +268,10 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
         outState.putString( ACCOUNT_ID_LABEL, accountId );
         outState.putString( PLAYER1_ID_LABEL, player1Id );
         outState.putString( PLAYER1_NAME_LABEL, player1Name );
+        outState.putString( PLAYER1_CHOICE_LABEL, p1Choice );
         outState.putString( PLAYER2_ID_LABEL, player2Id );
         outState.putString( PLAYER2_NAME_LABEL, player2Name );
+        outState.putString( PLAYER2_CHOICE_LABEL, p2Choice );
     }
 
     @Override
@@ -289,14 +293,14 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
         player1Name = intent.getStringExtra( PLAYER1_NAME_LABEL );
         player2Id = intent.getStringExtra( PLAYER2_ID_LABEL );
         player2Name = intent.getStringExtra( PLAYER2_NAME_LABEL );
-        if ( null == player1Id || null == player2Id ) {
-            if ( null != savedInstanceState ) {
-                Log.d( TAG, "Restoring from saved state");
-                player1Id = savedInstanceState.getString( PLAYER1_ID_LABEL );
-                player1Name = savedInstanceState.getString( PLAYER1_NAME_LABEL );
-                player2Id = savedInstanceState.getString( PLAYER2_ID_LABEL );
-                player2Name = savedInstanceState.getString( PLAYER2_NAME_LABEL );
-            }
+
+        // restore saved state
+        if ( null != savedInstanceState ) {
+            Log.d( TAG, "Restoring from saved state");
+            player1Id = savedInstanceState.getString( PLAYER1_ID_LABEL );
+            player1Name = savedInstanceState.getString( PLAYER1_NAME_LABEL );
+            player2Id = savedInstanceState.getString( PLAYER2_ID_LABEL );
+            player2Name = savedInstanceState.getString( PLAYER2_NAME_LABEL );
         }
 
         // set-up action bar
@@ -362,13 +366,20 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
                         "Easier than a P.H.D.",
                         "Superlative",
                         "Green... meet ball",
-                        "The slope is slightly downhill"
+                        "The slope is slightly downhill",
+                        "It's like one of Adams Trainers"
                 };
                 int choice = random.nextInt( advice.length );
                 textToSpeech.speak( advice[choice], TextToSpeech.QUEUE_ADD, null, "advice_id");
                 return true;
             }
         });
+
+        // restore previous choices
+        if ( null != savedInstanceState ) {
+            setP1Choice( savedInstanceState.getString(PLAYER1_CHOICE_LABEL));
+            setP2Choice( savedInstanceState.getString(PLAYER2_CHOICE_LABEL));
+        }
 
         checkButtons();
 
