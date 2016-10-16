@@ -33,10 +33,7 @@
         <activity
             android:name=".ResultsActivity"
             android:parentActivityName=".MainActivity" />
-        <activity
-            android:name=".CharacterPreferenceActivity"
-            android:parentActivityName=".MainActivity" />
-        <activity android:name=".PlayerStatisticsActivity"></activity>
+        <activity android:name=".PlayerStatisticsActivity"/>
     </application>
 
 </manifest>

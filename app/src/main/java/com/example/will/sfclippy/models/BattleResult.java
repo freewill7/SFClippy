@@ -7,6 +7,7 @@ import com.google.firebase.database.IgnoreExtraProperties;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * Represents the result of a battle.
@@ -23,7 +24,7 @@ public class BattleResult {
     public String p2Character;
     public String winnerId;
     final static private SimpleDateFormat dateFormat =
-            new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.UK);
 
     public BattleResult( ) {
         // default constructor

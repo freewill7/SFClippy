@@ -2,14 +2,7 @@
     <string name="app_name">SFClippy</string>
     <string name="drawer_open">Open Drawer</string>
     <string name="drawer_close">Close Drawer</string>
-    <string name="action_accept">Accept</string>
-    <string name="action_accept_results">Accept</string>
     <string name="action_lucky">Random Choice</string>
-    <string name="action_previous">Previous</string>
-    <string name="action_next">Next</string>
-
-    <string name="action_p1_preferences">P1 Preferences</string>
-    <string name="action_p2_preferences">P2 Preferences</string>
     <string name="action_results">View Results</string>
     <string name="action_backup">Backup Data</string>
     <string name="action_regenerate_stats">Regenerate Statistics</string>
@@ -35,4 +28,9 @@
     <string name="charresult_win">Win/Lose</string>
     <string name="charresult_date">Date</string>
     <string name="charresult_char">Character</string>
+
+    <string name="winner_icon">Image representing winner</string>
+    <string name="loading">Loading</string>
+    <string name="modify_battle">Modify Battle</string>
+    <string name="placeholder">Placeholder</string>
 </resources>

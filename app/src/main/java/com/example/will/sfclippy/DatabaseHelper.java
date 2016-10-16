@@ -22,13 +22,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by will on 24/09/2016.
+ * Helper class for dealing with Firebase database.
  */
 
 public class DatabaseHelper {
-    private FirebaseDatabase mDatabase;
-    private String mAccountId;
-    private DatabaseReference mUserHome;
+    private final String mAccountId;
+    private final DatabaseReference mUserHome;
     private static final String TAG = "DatabaseHelper";
     private static final int DEFAULT_SCORE = 2;
     private static final String PLAYER_VS_PLAYER_DIR = "player_vs_player";
@@ -37,7 +36,6 @@ public class DatabaseHelper {
     private static final String STATISTICS_MEMBER = "statistics";
 
     DatabaseHelper( FirebaseDatabase database, String accountId ) {
-        this.mDatabase = database;
         this.mAccountId = accountId;
         this.mUserHome = database.getReference( "/users/" + accountId );
     }
@@ -64,7 +62,7 @@ public class DatabaseHelper {
 
     public interface PlayersCallback {
         void playersInitialised( PlayerInfo p1Info, PlayerInfo p2Info );
-    };
+    }
 
     public void fetchOrInitialisePlayers( final PlayersCallback callback ) {
         final DatabaseReference players = getPlayersDirReference();
@@ -199,8 +197,7 @@ public class DatabaseHelper {
     }
 
     private static String characterKey( String name ) {
-        String key = name.toLowerCase().replaceAll( "[^\\p{Lower}]", "");
-        return key;
+        return name.toLowerCase().replaceAll( "[^\\p{Lower}]", "");
     }
 
     private DatabaseReference getCharacterPreference( String playerId, String characterName ) {
@@ -253,16 +250,6 @@ public class DatabaseHelper {
         createCharacter( character, characterName );
     }
 
-    private Map<String,BattleCounter> getPlayerMap( Map<String, Map<String,BattleCounter>> map,
-                                                   String playerId ) {
-        Map<String,BattleCounter> rv = map.get( playerId );
-        if ( null == rv ) {
-            rv = new HashMap<>();
-            map.put( playerId, rv );
-        }
-        return rv;
-    }
-
     private interface Factory<V> {
         V createInstance( );
     }
@@ -272,15 +259,6 @@ public class DatabaseHelper {
         if ( null == rv ) {
             rv = factory.createInstance();
             map.put( key, rv );
-        }
-        return rv;
-    }
-
-    private BattleCounter getOpponentResult( Map<String,BattleCounter> map, String opponent ) {
-        BattleCounter rv = map.get(opponent);
-        if ( null == rv ) {
-            rv = new BattleCounter();
-            map.put( opponent, rv );
         }
         return rv;
     }
@@ -402,7 +380,7 @@ public class DatabaseHelper {
                 results.removeEventListener(this);
 
                 if ( null != dataSnapshot ) {
-                    ArrayList<BattleResult> results = new ArrayList<BattleResult>();
+                    ArrayList<BattleResult> results = new ArrayList<>();
                     for (DataSnapshot child : dataSnapshot.getChildren()) {
                         results.add(child.getValue(BattleResult.class));
                     }

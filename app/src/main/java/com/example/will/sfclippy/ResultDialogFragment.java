@@ -11,11 +11,11 @@ import android.widget.Button;
 import android.widget.Toast;
 
 /**
- * Created by will on 25/08/2016.
+ * Fragment for modifying or deleting a result.
  */
 public class ResultDialogFragment extends DialogFragment
 implements View.OnClickListener {
-    public static String ITEM_ID_VAR = "itemId";
+    public static final String ITEM_ID_VAR = "itemId";
     private Button modifyButton;
     private Button deleteButton;
     private int itemId;

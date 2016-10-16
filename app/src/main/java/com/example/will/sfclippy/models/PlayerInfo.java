@@ -1,7 +1,7 @@
 package com.example.will.sfclippy.models;
 
 /**
- * Created by will on 03/09/2016.
+ * Represents information about a player.
  */
 
 public class PlayerInfo {

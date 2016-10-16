@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -46,10 +47,10 @@ implements CharacterRatingFragment.RatingInteractionListener {
      * One of the views within the RecyclerView.
      */
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        public Activity mActivity;
-        public View mView;
-        public RatingBar mRatingBar;
-        public TextView mTextView;
+        public final Activity mActivity;
+        public final View mView;
+        public final RatingBar mRatingBar;
+        public final TextView mTextView;
         public CharacterPreference mCharacter;
 
         public ViewHolder( Activity activity,
@@ -76,10 +77,6 @@ implements CharacterRatingFragment.RatingInteractionListener {
                 }
             });
         }
-
-        private CharacterPreference getCharacter() {
-            return mCharacter;
-        }
     }
 
     /**
@@ -88,14 +85,14 @@ implements CharacterRatingFragment.RatingInteractionListener {
     public static class MySelectAdapter extends RecyclerView.Adapter<ViewHolder>
     implements ValueEventListener {
         private List<CharacterPreference> mDataset = new ArrayList<>();
-        private Activity mActivity;
-        private String mAccountId;
-        private String mPlayerId;
-        private DatabaseHelper mHelper;
+        private final Activity mActivity;
+        private final String mAccountId;
+        private final String mPlayerId;
+        private final DatabaseHelper mHelper;
         private int defaultItemId;
         private static final String TAG = "MySelectAdapter";
-        private Comparator<CharacterPreference> orderer;
-        private RandomSelector selector = new RandomSelector();
+        private final Comparator<CharacterPreference> orderer;
+        private final RandomSelector selector = new RandomSelector();
 
         public MySelectAdapter( Activity activity,
                                 String accountId,
@@ -155,10 +152,9 @@ implements CharacterRatingFragment.RatingInteractionListener {
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
-            View view = (View) LayoutInflater.from( parent.getContext() )
+            View view = LayoutInflater.from( parent.getContext() )
                     .inflate( R.layout.layout_character_choice, parent, false );
-            ViewHolder vh = new ViewHolder( mActivity, view, mAccountId, mPlayerId );
-            return vh;
+            return new ViewHolder( mActivity, view, mAccountId, mPlayerId );
         }
 
         @Override
@@ -166,7 +162,7 @@ implements CharacterRatingFragment.RatingInteractionListener {
             CharacterPreference pref = mDataset.get(position);
             int chance = selector.percentageChance(pref);
             holder.mTextView.setText(pref.name + " (" + chance + "%)");
-            holder.mRatingBar.setRating( (int) pref.score );
+            holder.mRatingBar.setRating( pref.score );
             holder.mCharacter = pref;
             if ( defaultItemId == position ) {
                 holder.mTextView.setBackgroundColor( mActivity.getColor(R.color.colorAccent ) );
@@ -223,8 +219,11 @@ implements CharacterRatingFragment.RatingInteractionListener {
 
         Toolbar myToolbar = (Toolbar) findViewById(R.id.toolbarMain);
         setSupportActionBar(myToolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
-        getSupportActionBar().setTitle( title );
+        ActionBar actionBar = getSupportActionBar();
+        if ( null != actionBar ) {
+            actionBar.setDisplayHomeAsUpEnabled(false);
+            actionBar.setTitle(title);
+        }
 
         mReference = helper.getPlayerPrefsRef( playerId );
         mAdapter = new MySelectAdapter( this, accountId, playerId, helper );

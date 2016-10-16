@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 
 /**
- * Created by will on 05/08/2016.
+ * Splash screen when initially loading the app.
  */
 public class SplashActivity extends Activity {
     @Override

@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 
 /**
@@ -53,9 +54,9 @@ public class StatsBattleList extends DialogFragment {
      * One of the views within the RecyclerView.
      */
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        public TextView mDate;
-        public TextView mOpponentChar;
-        public TextView mResult;
+        public final TextView mDate;
+        public final TextView mOpponentChar;
+        public final TextView mResult;
 
         public ViewHolder( View view ) {
             super(view);
@@ -72,9 +73,9 @@ public class StatsBattleList extends DialogFragment {
             implements ValueEventListener {
         private List<BattleResult> mDataset = new ArrayList<>();
         private static final String TAG = "CharResultsAdapter";
-        private String mPlayerId;
-        private String mPlayerCharacter;
-        private static SimpleDateFormat format = new SimpleDateFormat( "dd-MMM");
+        private final String mPlayerId;
+        private final String mPlayerCharacter;
+        private static final SimpleDateFormat format = new SimpleDateFormat( "dd-MMM", Locale.UK);
 
         public CharResultsAdapter( String playerId, String playerCharacter ) {
             mPlayerId = playerId;
@@ -115,10 +116,9 @@ public class StatsBattleList extends DialogFragment {
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
-            View view = (View) LayoutInflater.from( parent.getContext() )
+            View view = LayoutInflater.from( parent.getContext() )
                     .inflate( R.layout.layout_character_result, parent, false );
-            ViewHolder vh = new ViewHolder( view );
-            return vh;
+            return new ViewHolder( view );
         }
 
         @Override

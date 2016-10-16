@@ -5,9 +5,10 @@ import android.util.Log;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 /**
- * Created by will on 24/09/2016.
+ * Keeps track of results for a particular pairing.
  */
 
 public class BattleCounter {
@@ -17,7 +18,8 @@ public class BattleCounter {
     public int winsSinceLoss;
     public String lastDefeat;
     public int lossesSinceLastWin;
-    private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss",
+            Locale.UK );
     private static final String TAG = "BattleCounter";
 
 

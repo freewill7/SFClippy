@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -12,8 +11,6 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -27,20 +24,18 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import java.io.IOException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 /**
- * Created by will on 13/08/2016.
+ * Activity for showing all recorded results.
  */
 public class ResultsActivity extends AppCompatActivity
 implements ResultDialogFragment.ResultDialogListener {
-    private DatabaseHelper mHelper;
     private ResultsAdapter mResultsAdapter;
     public static final String ACCOUNT_ID = "account_id";
     public static final String P1_ID = "player1_id";
@@ -51,19 +46,19 @@ implements ResultDialogFragment.ResultDialogListener {
     public static class ResultViewHolder extends RecyclerView.ViewHolder
             implements View.OnLongClickListener {
         int entryIndex;
-        private Activity activity;
-        public ImageView winnerImg;
-        public TextView dateView;
-        public TextView resultPairing;
+        private final Activity mActivity;
+        public final ImageView mWinnerImage;
+        public final TextView mDateView;
+        public final TextView mResultPairing;
 
         public ResultViewHolder( Activity activity, View container ) {
             super(container);
-            this.activity = activity;
+            this.mActivity = activity;
             container.setLongClickable(true);
             container.setOnLongClickListener(this);
-            winnerImg = (ImageView) container.findViewById( R.id.textResultImg );
-            dateView = (TextView) container.findViewById( R.id.textResultDateLabel );
-            resultPairing = (TextView) container.findViewById( R.id.textResultPairing );
+            mWinnerImage = (ImageView) container.findViewById( R.id.textResultImg );
+            mDateView = (TextView) container.findViewById( R.id.textResultDateLabel );
+            mResultPairing = (TextView) container.findViewById( R.id.textResultPairing );
         }
 
         @Override
@@ -73,7 +68,7 @@ implements ResultDialogFragment.ResultDialogListener {
 
             ResultDialogFragment dialog = new ResultDialogFragment();
             dialog.setArguments(bundle);
-            dialog.show( activity.getFragmentManager(), "frame name" );
+            dialog.show( mActivity.getFragmentManager(), "frame name" );
 
             return true;
         }
@@ -88,15 +83,15 @@ implements ResultDialogFragment.ResultDialogListener {
 
     public static class ResultsAdapter extends RecyclerView.Adapter<ResultViewHolder>
     implements ValueEventListener {
-        private Activity activity;
-        private DatabaseReference resultsRef;
+        private final Activity activity;
+        private final DatabaseReference resultsRef;
         private List<BattleResult> results;
-        private static SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM");
-        private String p1Id;
-        private String p2Id;
-        private Drawable p1Img;
-        private Drawable p2Img;
-        private Comparator<BattleResult> orderer;
+        private static SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM", Locale.UK);
+        private final String p1Id;
+        private final String p2Id;
+        private final Drawable p1Img;
+        private final Drawable p2Img;
+        private final Comparator<BattleResult> orderer = new DescendingDateOrderer();
 
         /**
          * Elements of the view.
@@ -114,15 +109,13 @@ implements ResultDialogFragment.ResultDialogListener {
             this.p2Id = p2Id;
             this.p1Img = p1Img;
             this.p2Img = p2Img;
-            orderer = new DescendingDateOrderer();
         }
 
         @Override
         public ResultViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
             View entry = LayoutInflater.from( parent.getContext() )
                     .inflate( R.layout.layout_result, parent, false );
-            ResultViewHolder vh = new ResultViewHolder( activity, entry );
-            return vh;
+            return new ResultViewHolder( activity, entry );
         }
 
         @Override
@@ -139,17 +132,17 @@ implements ResultDialogFragment.ResultDialogListener {
 
             holder.entryIndex = position;
             if ( result.winnerId.equals(p1Id) ) {
-                holder.winnerImg.setImageDrawable( p1Img );
+                holder.mWinnerImage.setImageDrawable( p1Img );
             } else {
-                holder.winnerImg.setImageDrawable( p2Img );
+                holder.mWinnerImage.setImageDrawable( p2Img );
             }
-            holder.resultPairing.setText( p1String + " vs " + p2String );
+            holder.mResultPairing.setText( p1String + " vs " + p2String );
             String date = "unknown";
             String tmpDate = dateFormat.format( result.dateAsDate());
             if ( null != tmpDate ) {
                 date = tmpDate;
             }
-            holder.dateView.setText(date);
+            holder.mDateView.setText(date);
         }
 
         /**
@@ -214,7 +207,7 @@ implements ResultDialogFragment.ResultDialogListener {
         String player1Id = intent.getStringExtra(P1_ID);
         String player2Id = intent.getStringExtra(P2_ID);
 
-        mHelper = new DatabaseHelper( FirebaseDatabase.getInstance(), accountId );
+        DatabaseHelper dbHelper = new DatabaseHelper( FirebaseDatabase.getInstance(), accountId );
 
         // TODO update based on actual names
         TextDrawable p1Img = TextDrawable.builder()
@@ -223,7 +216,7 @@ implements ResultDialogFragment.ResultDialogListener {
                 .buildRound( "B", Color.BLUE );
 
         // fetch results to display
-        mResults = mHelper.getResultsDirReference();
+        mResults = dbHelper.getResultsDirReference();
         mResultsAdapter = new ResultsAdapter( this, mResults, player1Id, player2Id, p1Img, p2Img );
         mResults.addValueEventListener(mResultsAdapter);
         listView.setAdapter(mResultsAdapter);

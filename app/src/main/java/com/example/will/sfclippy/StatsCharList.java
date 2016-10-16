@@ -1,6 +1,5 @@
 package com.example.will.sfclippy;
 
-import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -13,7 +12,6 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.example.will.sfclippy.models.CharacterPreference;
-import com.github.mikephil.charting.charts.BarChart;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -49,7 +47,6 @@ public class StatsCharList extends Fragment {
     // TODO: Rename and change types of parameters
     private String mAccountId;
     private String mPlayerId;
-    private DatabaseHelper mHelper;
     private DatabaseReference mPreferencesDir;
     private int mStatsType;
     private MyStatsAdapter mAdapter;
@@ -69,8 +66,8 @@ public class StatsCharList extends Fragment {
     public static class ViewHolder extends RecyclerView.ViewHolder {
         private final ViewCharacterResults mParent;
         public String mCharacterName;
-        public TextView mCharName;
-        public TextView mCharStat;
+        public final TextView mCharName;
+        public final TextView mCharStat;
 
         public ViewHolder(ViewCharacterResults parent, View view ) {
             super(view);
@@ -139,10 +136,9 @@ public class StatsCharList extends Fragment {
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType ) {
-            View view = (View) LayoutInflater.from( parent.getContext() )
+            View view = LayoutInflater.from( parent.getContext() )
                     .inflate( R.layout.layout_char_stat, parent, false );
-            ViewHolder vh = new ViewHolder( mController, view );
-            return vh;
+            return new ViewHolder( mController, view );
         }
 
         @Override
@@ -186,8 +182,8 @@ public class StatsCharList extends Fragment {
             mStatsType = getArguments().getInt(ARG_STATS_TYPE);
         }
 
-        mHelper = new DatabaseHelper( FirebaseDatabase.getInstance(), mAccountId );
-        mPreferencesDir = mHelper.getPlayerPrefsRef( mPlayerId );
+        DatabaseHelper helper = new DatabaseHelper( FirebaseDatabase.getInstance(), mAccountId );
+        mPreferencesDir = helper.getPlayerPrefsRef( mPlayerId );
     }
 
     private static class CompareWins implements Comparator<CharacterPreference> {

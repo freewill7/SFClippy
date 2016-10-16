@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:layout_gravity="start"
     android:orientation="vertical"
-    android:background="@color/background_floating_material_light"
+    android:background="?android:attr/panelBackground"
     android:id="@+id/layoutDrawerMain">
 
     <TextView

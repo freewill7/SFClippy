@@ -2,7 +2,6 @@ package com.example.will.sfclippy;
 
 import android.app.DialogFragment;
 import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.util.Log;
@@ -19,8 +18,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-
-import org.w3c.dom.Text;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -44,15 +41,13 @@ public class CharacterRatingFragment extends DialogFragment
     private static final String ARG_CHARACTER_NAME = "characterName";
     private static final String ARG_CHARACTER_SCORE = "characterScore";
     private static final String TAG = "CharacterRatingFragment";
-    private static final SimpleDateFormat humanDate = new SimpleDateFormat("dd-MMM");
+    private static final SimpleDateFormat humanDate = new SimpleDateFormat("dd-MMM", Locale.UK);
 
-    private String mAccountId;
     private String mPlayerId;
     private String mCharacterName;
     private DatabaseHelper mHelper;
 
     private int mInitialRating;
-    private RatingBar mRatingBar;
     private Button mButton;
 
     private TextView mLabelFirst;
@@ -93,11 +88,11 @@ public class CharacterRatingFragment extends DialogFragment
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mAccountId = getArguments().getString(ARG_ACCOUNT_ID);
+            String accountId = getArguments().getString(ARG_ACCOUNT_ID);
             mPlayerId = getArguments().getString(ARG_PLAYER_ID);
             mCharacterName = getArguments().getString(ARG_CHARACTER_NAME);
             mInitialRating = getArguments().getInt(ARG_CHARACTER_SCORE);
-            mHelper = new DatabaseHelper( FirebaseDatabase.getInstance(), mAccountId );
+            mHelper = new DatabaseHelper( FirebaseDatabase.getInstance(), accountId );
         }
     }
 
@@ -107,11 +102,13 @@ public class CharacterRatingFragment extends DialogFragment
         if ( counter.winsSinceLoss > 0 ) {
             Date lastLoss = counter.lastDefeatAsDate();
             if ( null == lastLoss ) {
-                ret = String.format( "No losses (%d battles)", counter.winsSinceLoss );
+                ret = String.format( Locale.UK,
+                        "No losses (%d battles)", counter.winsSinceLoss );
             } else {
                 String strLastLoss = humanDate.format(lastLoss);
 
-                ret = String.format("No losses since %s (%d battles)",
+                ret = String.format( Locale.UK,
+                        "No losses since %s (%d battles)",
                         strLastLoss,
                         counter.winsSinceLoss);
             }
@@ -119,11 +116,13 @@ public class CharacterRatingFragment extends DialogFragment
         } else if ( counter.lossesSinceLastWin > 0 ) {
             Date lastVictory = counter.lastVictoryAsDate();
             if ( null == lastVictory ) {
-                ret = String.format( "No wins (%d battles)", counter.lossesSinceLastWin);
+                ret = String.format( Locale.UK,
+                        "No wins (%d battles)", counter.lossesSinceLastWin);
             } else {
                 String strLastVictory = humanDate.format(lastVictory);
 
-                ret = String.format("No wins since %s (%d battles)",
+                ret = String.format( Locale.UK,
+                        "No wins since %s (%d battles)",
                         strLastVictory,
                         counter.lossesSinceLastWin);
             }
@@ -185,9 +184,9 @@ public class CharacterRatingFragment extends DialogFragment
         TextView textView = (TextView) view.findViewById(R.id.labelTitle);
         textView.setText( mCharacterName );
 
-        mRatingBar = (RatingBar) view.findViewById(R.id.ratingBar);
-        mRatingBar.setRating( mInitialRating );
-        mRatingBar.setOnRatingBarChangeListener(this);
+        RatingBar ratingBar = (RatingBar) view.findViewById(R.id.ratingBar);
+        ratingBar.setRating( mInitialRating );
+        ratingBar.setOnRatingBarChangeListener(this);
 
         mButton  = (Button) view.findViewById(R.id.btnSelectCharacter);
         mButton.setOnClickListener(this);

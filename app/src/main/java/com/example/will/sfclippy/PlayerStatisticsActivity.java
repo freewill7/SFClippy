@@ -15,7 +15,6 @@ public class PlayerStatisticsActivity extends AppCompatActivity
 implements StatsCharList.ViewCharacterResults {
     private String mAccountId;
     private String mPlayerId;
-    private String mPlayerName;
 
     public static final String ACCOUNT_ID = "account_id";
     public static final String PLAYER_ID = "player_id";
@@ -37,12 +36,12 @@ implements StatsCharList.ViewCharacterResults {
         Intent intent = getIntent();
         mAccountId = intent.getStringExtra(ACCOUNT_ID);
         mPlayerId = intent.getStringExtra(PLAYER_ID);
-        mPlayerName = intent.getStringExtra(PLAYER_NAME);
+        String playerName = intent.getStringExtra(PLAYER_NAME);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbarStats);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
-        getSupportActionBar().setTitle(mPlayerName + " statistics");
+        getSupportActionBar().setTitle(playerName + " statistics");
 
         MyAdapter adapter = new MyAdapter( getSupportFragmentManager(), mAccountId, mPlayerId );
 
@@ -55,8 +54,8 @@ implements StatsCharList.ViewCharacterResults {
     }
 
     public static class MyAdapter extends FragmentPagerAdapter {
-        private String mAccountId;
-        private String mPlayerId;
+        private final String mAccountId;
+        private final String mPlayerId;
 
         public MyAdapter(FragmentManager fm,
                          String accountId,

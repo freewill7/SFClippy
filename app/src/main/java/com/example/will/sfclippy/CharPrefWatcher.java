@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by will on 08/10/2016.
+ * Watches for changes to character preferences.
  */
 
 public class CharPrefWatcher implements ValueEventListener {

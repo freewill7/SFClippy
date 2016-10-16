@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Created by will on 03/09/2016.
+ * Class for randomly selecting a character.
  */
 
 public class RandomSelector {

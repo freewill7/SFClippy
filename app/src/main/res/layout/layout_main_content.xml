@@ -61,7 +61,7 @@
     </LinearLayout>
 
     <Space
-        android:layout_width="20px"
+        android:layout_width="20dp"
         android:layout_height="48dp"
         android:layout_centerHorizontal="true"
         android:layout_alignParentBottom="true"

@@ -1,8 +1,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="layout.result_options"
     android:orientation="vertical">
 
     <!-- TODO: Update blank fragment layout -->
@@ -11,7 +9,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Modify Battle"
+        android:text="@string/modify_battle"
         android:id="@+id/textView2"
         style="@style/Base.DialogWindowTitle.AppCompat" />
 
@@ -19,32 +17,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="Date Text"
+        android:text="@string/placeholder"
         android:id="@+id/lblResultDate"
-        style="@style/Base.AlertDialog.AppCompat" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="P1 Choice"
-        android:id="@+id/lblResultP1"
-        style="@style/Base.AlertDialog.AppCompat" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="P2 Choice"
-        android:id="@+id/lblResultP2"
-        style="@style/Base.AlertDialog.AppCompat" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="Winner"
-        android:id="@+id/lblResultWinner"
         style="@style/Base.AlertDialog.AppCompat" />
 
     <LinearLayout

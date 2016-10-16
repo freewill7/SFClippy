@@ -46,9 +46,6 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
     private Button p1Win;
     private Button p2Win;
     private DatabaseHelper helper;
-    private TextView lblFact1;
-    private TextView lblFact2;
-    private TextView lblFact3;
     private TextToSpeech textToSpeech;
     private DatabaseReference p1PrefRef;
     final private CharPrefWatcher p1PrefWatcher = new CharPrefWatcher();
@@ -134,19 +131,17 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
                  startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(parent).toBundle());
              }
         }
-    };
+    }
 
     private static class OverallStatsWatcher implements ValueEventListener {
         private final TextView lbl;
         private final String p1Name;
-        private final String p2Name;
         private static final String TAG = "OverallStatsWatcher";
         private static final String DEFAULT = "No previous results";
 
         public OverallStatsWatcher( TextView lbl, String p1Name, String p2Name ) {
             this.lbl = lbl;
             this.p1Name = p1Name;
-            this.p2Name = p2Name;
             lbl.setText( DEFAULT );
         }
 
@@ -328,9 +323,9 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
         p2Win.setOnClickListener( this );
 
         // get facts
-        lblFact1 = (TextView) findViewById(R.id.lblFact1);
-        lblFact2 = (TextView) findViewById(R.id.lblFact2);
-        lblFact3 = (TextView) findViewById(R.id.lblFact3);
+        TextView lblFact1 = (TextView) findViewById(R.id.lblFact1);
+        TextView lblFact2 = (TextView) findViewById(R.id.lblFact2);
+        TextView lblFact3 = (TextView) findViewById(R.id.lblFact3);
 
         helper = new DatabaseHelper( FirebaseDatabase.getInstance(), accountId);
 
@@ -355,7 +350,7 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
         // easter egg
         p1Text.setLongClickable(true);
         p1Text.setOnLongClickListener(new View.OnLongClickListener() {
-            Random random = new Random(System.currentTimeMillis());
+            final Random random = new Random(System.currentTimeMillis());
 
             @Override
             public boolean onLongClick(View v) {
@@ -550,7 +545,7 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
         if ( status == TextToSpeech.SUCCESS ) {
             // btnSpeak.setEnabled(true);
         } else {
-            Toast.makeText(this, "Failed to initialise speech", Toast.LENGTH_SHORT);
+            Toast.makeText(this, "Failed to initialise speech", Toast.LENGTH_SHORT).show();
         }
     }
 
