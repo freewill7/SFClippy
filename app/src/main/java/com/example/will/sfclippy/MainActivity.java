@@ -28,6 +28,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 
 public class MainActivity extends AppCompatActivity
 implements View.OnClickListener, TextToSpeech.OnInitListener {
@@ -346,6 +347,28 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
         p2Button.setOnClickListener( this );
 
         textToSpeech = new TextToSpeech( this, this );
+
+        // easter egg
+        p1Text.setLongClickable(true);
+        p1Text.setOnLongClickListener(new View.OnLongClickListener() {
+            Random random = new Random(System.currentTimeMillis());
+
+            @Override
+            public boolean onLongClick(View v) {
+                String[] advice = {
+                        "There's a cross wind... don't let it cross you",
+                        "Take care- there's a mild breeze",
+                        "Ouch... Rough landing",
+                        "Easier than a P.H.D.",
+                        "Superlative",
+                        "Green... meet ball",
+                        "The slope is slightly downhill"
+                };
+                int choice = random.nextInt( advice.length );
+                textToSpeech.speak( advice[choice], TextToSpeech.QUEUE_ADD, null, "advice_id");
+                return true;
+            }
+        });
 
         checkButtons();
 
