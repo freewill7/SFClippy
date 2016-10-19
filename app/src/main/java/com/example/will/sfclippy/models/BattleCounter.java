@@ -86,4 +86,10 @@ public class BattleCounter {
     public int getWinningRun( ) {
         return winsSinceLoss - lossesSinceLastWin;
     }
+
+    public int getPredictedWins( int maxBattles ) {
+        int unplayed = maxBattles - battles;
+        int expectedWins = unplayed / 2;
+        return wins + expectedWins;
+    }
 }

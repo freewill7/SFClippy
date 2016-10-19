@@ -43,6 +43,7 @@ public class StatsCharList extends Fragment {
     public static final int ORDER_BY_RUN = 4;
     public static final int ORDER_BY_PERCENT = 5;
     public static final int ORDER_BY_PLAYED = 6;
+    public static final int ORDER_BY_PREDICTED = 7;
 
     // TODO: Rename and change types of parameters
     private String mAccountId;
@@ -89,6 +90,10 @@ public class StatsCharList extends Fragment {
         void bindValue( ViewHolder view, CharacterPreference value );
     }
 
+    class SharedStatistics {
+        public int maxCharBattles = 0;
+    }
+
     /**
      * Adapter between a FirebaseDb and RecyclerView.
      */
@@ -99,25 +104,37 @@ public class StatsCharList extends Fragment {
         private final Comparator<CharacterPreference> mOrderer;
         private final CharFormatter mFormatter;
         private final ViewCharacterResults mController;
+        private final SharedStatistics mStatistics;
 
         public MyStatsAdapter( ViewCharacterResults controller,
                                Comparator<CharacterPreference> orderer,
-                               CharFormatter formatter ) {
+                               CharFormatter formatter,
+                               SharedStatistics statistics) {
             mController = controller;
             mOrderer = orderer;
             mFormatter = formatter;
+            mStatistics = statistics;
         }
 
         @Override
         public void onDataChange(DataSnapshot snapshot) {
             if ( null != snapshot.getValue()) {
+                int maxBattles = 0;
+
                 ArrayList<CharacterPreference> preferences = new ArrayList<>();
                 for ( DataSnapshot snap : snapshot.getChildren() ) {
                     CharacterPreference pref = snap.getValue(CharacterPreference.class);
                     if ( null != pref && null != pref.statistics ) {
+                        // update max statistics
+                        if ( pref.statistics.battles > maxBattles ) {
+                            maxBattles = pref.statistics.battles;
+                        }
                         preferences.add( pref );
                     }
                 }
+
+                // update shared statistics
+                mStatistics.maxCharBattles = maxBattles;
 
                 // Sort appropriately
                 Log.d( TAG, "Collection size is " + preferences.size());
@@ -245,7 +262,9 @@ public class StatsCharList extends Fragment {
         public void bindValue( ViewHolder vh, CharacterPreference pref ) {
             vh.mCharName.setText( pref.name );
             vh.mCharStat.setText(
-                    String.format(Locale.UK, "%d%%", pref.statistics.getWinPercentage())
+                    String.format(Locale.UK, "%d%% (of %d)",
+                            pref.statistics.getWinPercentage(),
+                            pref.statistics.battles )
             );
         }
     }
@@ -282,6 +301,46 @@ public class StatsCharList extends Fragment {
         }
     }
 
+    private static class ComparePredicted implements  Comparator<CharacterPreference> {
+        private final SharedStatistics mStatistics;
+
+        public ComparePredicted( SharedStatistics statistics ) {
+            mStatistics = statistics;
+        }
+
+        public int compare( CharacterPreference a, CharacterPreference b ) {
+            int diff = b.statistics.getPredictedWins( mStatistics.maxCharBattles ) -
+                    a.statistics.getPredictedWins( mStatistics.maxCharBattles );
+            if ( 0 == diff ) {
+                diff = b.statistics.wins - a.statistics.wins;
+            }
+            if ( 0 == diff ) {
+                diff = b.name.compareTo(a.name);
+            }
+            return diff;
+        }
+    }
+
+    private static class FormatPredicted implements CharFormatter {
+        private final SharedStatistics mStatistics;
+
+        FormatPredicted( SharedStatistics statistics ) {
+            mStatistics = statistics;
+        }
+
+        public void bindValue( ViewHolder vh, CharacterPreference pref ) {
+            int maxBattles = mStatistics.maxCharBattles;
+            int predicted = pref.statistics.getPredictedWins(maxBattles);
+            int margin = predicted - pref.statistics.wins;
+
+            vh.mCharName.setText( pref.name );
+            vh.mCharStat.setText(
+                    String.format(Locale.UK, "%d%% (+/- %d%%)",
+                            (100 * predicted) / maxBattles,
+                            (100 * margin) / maxBattles ) );
+        }
+    }
+
     @Override
     public void onAttach( Context context ) {
         super.onAttach(context);
@@ -301,6 +360,7 @@ public class StatsCharList extends Fragment {
 
         Comparator<CharacterPreference> order = new CompareWins();
         CharFormatter formatter = new FormatWins();
+        SharedStatistics statistics = new SharedStatistics();
 
         if ( ORDER_BY_LOSSES == mStatsType ) {
             order = new CompareLosses();
@@ -317,9 +377,12 @@ public class StatsCharList extends Fragment {
         } else if ( ORDER_BY_PLAYED == mStatsType ) {
             order = new ComparePlayed();
             formatter = new FormatPlayed();
+        } else if ( ORDER_BY_PREDICTED == mStatsType ) {
+            order = new ComparePredicted( statistics );
+            formatter = new FormatPredicted( statistics );
         }
 
-        mAdapter = new MyStatsAdapter( mController, order, formatter );
+        mAdapter = new MyStatsAdapter( mController, order, formatter, statistics );
         mPreferencesDir.addValueEventListener( mAdapter );
 
         RecyclerView recyclerView = (RecyclerView) v.findViewById(R.id.listStats);

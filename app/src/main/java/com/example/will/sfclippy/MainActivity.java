@@ -350,21 +350,24 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
         // easter egg
         p1Text.setLongClickable(true);
         p1Text.setOnLongClickListener(new View.OnLongClickListener() {
-            final Random random = new Random(System.currentTimeMillis());
+            String[] advice = {
+                    "There's a cross wind... don't let it cross you",
+                    "Take care- there's a mild breeze",
+                    "Ouch... Rough landing",
+                    "Easier than a P.H.D.",
+                    "Superlative",
+                    "Green... meet ball",
+                    "The slope is slightly downhill",
+                    "It's like one of Adams Trainers"
+            };
+            int counter = new Random(System.currentTimeMillis()).nextInt(advice.length);
 
             @Override
             public boolean onLongClick(View v) {
-                String[] advice = {
-                        "There's a cross wind... don't let it cross you",
-                        "Take care- there's a mild breeze",
-                        "Ouch... Rough landing",
-                        "Easier than a P.H.D.",
-                        "Superlative",
-                        "Green... meet ball",
-                        "The slope is slightly downhill",
-                        "It's like one of Adams Trainers"
-                };
-                int choice = random.nextInt( advice.length );
+
+                //int choice = random.nextInt( advice.length );
+                int choice = counter;
+                counter = (counter + 1) % advice.length;
                 textToSpeech.speak( advice[choice], TextToSpeech.QUEUE_ADD, null, "advice_id");
                 return true;
             }
