@@ -391,7 +391,7 @@ public class StatsCharList extends Fragment {
 
             vh.mCharName.setText( getCharacterName(pref) );
             vh.mCharStat.setText(
-                    String.format(Locale.UK, "%d%% (+- %d%%)",
+                    String.format(Locale.UK, "%d%% (- %d%%)",
                             (100 * maxWins) / maxBattles,
                             (100 * margin) / maxBattles )
             );
