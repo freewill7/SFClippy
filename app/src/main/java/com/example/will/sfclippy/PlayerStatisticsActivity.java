@@ -20,13 +20,14 @@ implements StatsCharList.ViewCharacterResults {
     public static final String PLAYER_ID = "player_id";
     public static final String PLAYER_NAME = "player_name";
     private static final int CHOICE_PREDICTED = 0;
-    private static final int CHOICE_PLAYED = 1;
+    private static final int CHOICE_POTENTIAL = 1;
+    private static final int CHOICE_PLAYED = 2;
     private static final int CHOICE_PERCENT = 3;
-    private static final int CHOICE_RUN = 2;
-    private static final int CHOICE_WINS = 4;
-    private static final int CHOICE_LOSSES = 5;
-    private static final int CHOICE_DIFF = 6;
-    private static final int NUM_ITEMS = 7;
+    private static final int CHOICE_RUN = 4;
+    private static final int CHOICE_WINS = 5;
+    private static final int CHOICE_LOSSES = 6;
+    private static final int CHOICE_DIFF = 7;
+    private static final int NUM_ITEMS = 8;
     private static final String TAG = "PlayerStatistics";
 
     @Override
@@ -87,6 +88,8 @@ implements StatsCharList.ViewCharacterResults {
                 return StatsCharList.newInstance(mAccountId, mPlayerId, StatsCharList.ORDER_BY_PERCENT);
             } else if ( CHOICE_PREDICTED == position ) {
                 return StatsCharList.newInstance(mAccountId, mPlayerId, StatsCharList.ORDER_BY_PREDICTED);
+            } else if ( CHOICE_POTENTIAL == position ) {
+                return StatsCharList.newInstance(mAccountId, mPlayerId, StatsCharList.ORDER_BY_POTENTIAL);
             } else {
                 Log.e( TAG, "No such item at position " + position);
                 return null;
@@ -109,6 +112,8 @@ implements StatsCharList.ViewCharacterResults {
                 return "Percent";
             } else if ( CHOICE_PREDICTED == position ) {
                 return "Predicted";
+            } else if ( CHOICE_POTENTIAL == position ) {
+                return "Potential";
             } else {
                 return "Unknown";
             }

@@ -2,6 +2,7 @@ package com.example.will.sfclippy;
 
 import android.util.Log;
 
+import com.example.will.sfclippy.models.BattleCounter;
 import com.example.will.sfclippy.models.CharacterPreference;
 
 import java.util.Calendar;
@@ -47,6 +48,21 @@ public class RandomSelector {
         return total;
     }
 
+    /**
+     * Return the most battles played by a character.
+     * @return The number of battles for the most popular character.
+     */
+    public int getMostBattles( ) {
+        int most = 0;
+        for ( CharacterPreference character : chars ) {
+            int current = character.getBattleCount();
+            if ( current > most ) {
+                most = current;
+            }
+        }
+        return most;
+    }
+
     public int getCharacterScore( CharacterPreference character ) {
         return character.score - 1;
 
@@ -80,6 +96,27 @@ public class RandomSelector {
         }
 
         return idx;
+    }
+
+    public int discoverCharacter( ) {
+        int most = getMostBattles();
+
+        int discoverIndex = -1;
+        int bestScore = -1;
+
+        for ( int idx=1; idx<chars.size(); idx++) {
+            CharacterPreference character = chars.get(idx);
+            if ( character.score > 1 ) {
+                // find most wins possible from this character
+                int currentScore = character.getMaximumWins(most);
+                if (currentScore > bestScore) {
+                    bestScore = currentScore;
+                    discoverIndex = idx;
+                }
+            }
+        }
+
+        return discoverIndex;
     }
 }
 

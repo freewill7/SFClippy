@@ -92,4 +92,9 @@ public class BattleCounter {
         int expectedWins = unplayed / 2;
         return wins + expectedWins;
     }
+
+    public int getMaximumWins( int maxBattles ) {
+        int unplayed = maxBattles - battles;
+        return wins + unplayed;
+    }
 }

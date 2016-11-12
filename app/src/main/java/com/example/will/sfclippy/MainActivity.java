@@ -395,21 +395,36 @@ implements View.OnClickListener, TextToSpeech.OnInitListener {
     @Override
     public boolean onOptionsItemSelected( MenuItem item ) {
         switch ( item.getItemId() ) {
-            case R.id.action_lucky:
-
+            case R.id.action_lucky: {
                 String choice1 = p1PrefWatcher.getRandomCharacter();
-                if ( ! choice1.equals(UNKNOWN_CHOICE) ) {
+                if (!choice1.equals(UNKNOWN_CHOICE)) {
                     setP1Choice(choice1);
                 }
 
                 String choice2 = p2PrefWatcher.getRandomCharacter();
-                if ( ! choice2.equals(UNKNOWN_CHOICE) ) {
+                if (!choice2.equals(UNKNOWN_CHOICE)) {
                     setP2Choice(choice2);
                 }
 
                 announceCharacters();
 
                 return true;
+            }
+            case R.id.action_learn: {
+                String choice1 = p1PrefWatcher.getDiscoverCharacter();
+                if (!choice1.equals(UNKNOWN_CHOICE)) {
+                    setP1Choice(choice1);
+                }
+
+                String choice2 = p2PrefWatcher.getDiscoverCharacter();
+                if (!choice2.equals(UNKNOWN_CHOICE)) {
+                    setP2Choice(choice2);
+                }
+
+                announceCharacters();
+
+                return true;
+            }
             case R.id.action_listen:
                 Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,

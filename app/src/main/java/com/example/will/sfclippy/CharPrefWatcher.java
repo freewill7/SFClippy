@@ -34,6 +34,15 @@ public class CharPrefWatcher implements ValueEventListener {
         return ret;
     }
 
+    public String getDiscoverCharacter( ) {
+        int index = selector.discoverCharacter();
+        String ret = UNKNOWN;
+        if ( preferences.size() > index ) {
+            ret = preferences.get(index).name;
+        }
+        return ret;
+    }
+
     public String matchCharacter( String input ) {
         String ret = UNKNOWN;
         Log.d( TAG, "Matching " + input );

@@ -2,6 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/action_learn"
+        android:icon="@drawable/ic_school_24dp"
+        android:title="@string/action_learn"
+        app:showAsAction="ifRoom"/>
+    <item
         android:id="@+id/action_lucky"
         android:icon="@drawable/ic_assistant_24dp"
         android:title="@string/action_lucky"

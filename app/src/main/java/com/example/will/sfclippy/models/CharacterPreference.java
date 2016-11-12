@@ -39,4 +39,68 @@ public class CharacterPreference {
             return diff;
         }
     }
+
+    public int getMaximumWins( int totalBattles ) {
+        int ret = totalBattles;
+        if ( null != statistics ) {
+            ret = statistics.getMaximumWins(totalBattles);
+        }
+        return ret;
+    }
+
+    public int getBattleCount( ) {
+        int ret = 0;
+        if ( null != statistics ) {
+            ret = statistics.battles;
+        }
+        return ret;
+    }
+
+    public int getWinCount( ) {
+        int ret = 0;
+        if ( null != statistics ) {
+            ret = statistics.wins;
+        }
+        return ret;
+    }
+
+    public int getLossCount( ) {
+        int ret = 0;
+        if ( null != statistics ) {
+            ret = statistics.getLosses();
+        }
+        return ret;
+    }
+
+    public int getDifference( ) {
+        int ret = 0;
+        if ( null != statistics ) {
+            ret = statistics.getDifference();
+        }
+        return ret;
+    }
+
+    public int getWinPercentage( ) {
+        int ret = 100;
+        if ( null != statistics ) {
+            ret = statistics.getWinPercentage();
+        }
+        return ret;
+    }
+
+    public int getWinningRun( ) {
+        int ret = 0;
+        if ( null != statistics ) {
+            ret = statistics.getWinningRun();
+        }
+        return ret;
+    }
+
+    public int getPredictedWins( int maxBattles ) {
+        int ret = maxBattles / 2;
+        if ( null != statistics ) {
+            ret = statistics.getPredictedWins(maxBattles);
+        }
+        return ret;
+    }
 }

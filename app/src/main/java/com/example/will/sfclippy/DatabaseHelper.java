@@ -18,8 +18,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Helper class for dealing with Firebase database.
@@ -34,6 +36,13 @@ public class DatabaseHelper {
     private static final String PVP_OVERALL = "overall";
     private static final String PVP_CHARACTERS = "characters";
     private static final String STATISTICS_MEMBER = "statistics";
+
+    private static String[] characters = new String[] {
+            "Ryu", "Chun-Li", "Nash", "M.Bison",
+            "Cammy", "Birdie", "Ken", "Necalli",
+            "Vega", "R.Mika", "Rashid", "Karin",
+            "Zangief", "Laura", "Dhalsim", "F.A.N.G.",
+            "Alex", "Guile", "Ibuki", "Balrog", "Juri" };
 
     DatabaseHelper( FirebaseDatabase database, String accountId ) {
         this.mAccountId = accountId;
@@ -234,12 +243,7 @@ public class DatabaseHelper {
 
     public void bootstrapCharacterPrefs( String playerId ) {
         DatabaseReference ref = getPlayerPrefsRef(playerId);
-        String[] characters = new String[] {
-                "Ryu", "Chun-Li", "Nash", "M.Bison",
-                "Cammy", "Birdie", "Ken", "Necalli",
-                "Vega", "R.Mika", "Rashid", "Karin",
-                "Zangief", "Laura", "Dhalsim", "F.A.N.G.",
-                "Alex", "Guile", "Ibuki", "Balrog", "Juri" };
+
         for ( String character : characters ) {
             createCharacter( ref, character );
         }
@@ -287,6 +291,15 @@ public class DatabaseHelper {
         Map<Pair<String,String>, Map<Pair<String,String>, BattleCounter>> playerCharToPlayerChar
                 = new HashMap<>();
 
+        Factory<BattleCounter> bcF = new Factory<BattleCounter>() {
+            @Override
+            public BattleCounter createInstance() {
+                return new BattleCounter();
+            }
+        };
+
+        Set<String> playerIds = new HashSet<>();
+
         for ( BattleResult result : results ) {
             Pair<String,String> p1Char = new Pair<>( result.p1Id, result.p1Character );
             Pair<String,String> p2Char = new Pair<>( result.p2Id, result.p2Character );
@@ -295,12 +308,9 @@ public class DatabaseHelper {
             Pair<String,String> c1c2 = new Pair<>( result.p1Character, result.p2Character );
             Pair<String,String> c2c1 = new Pair<>( result.p2Character, result.p1Character );
 
-            Factory<BattleCounter> bcF = new Factory<BattleCounter>() {
-                @Override
-                public BattleCounter createInstance() {
-                    return new BattleCounter();
-                }
-            };
+            playerIds.add(result.p1Id);
+            playerIds.add(result.p2Id);
+
             Factory<Map<Pair<String,String>,BattleCounter>> mbcF =
                     new Factory<Map<Pair<String,String>, BattleCounter>>() {
                         @Override
@@ -326,7 +336,14 @@ public class DatabaseHelper {
             updateResults( p1Chars, result.p1Id, p2Chars, result.p2Id, result );
         }
 
-        // update database for each character
+        // remove existing character statistics for each player
+        for ( String playerId : playerIds ) {
+            for ( String character : characters ) {
+                getCharacterStatistics( playerId, character ).removeValue();
+            }
+        }
+
+        // update character statistics for each player
         Log.d( TAG, "Player to character statistics " + playerCharacterCounter.size());
         for ( Map.Entry<Pair<String,String>,BattleCounter> it : playerCharacterCounter.entrySet() ) {
             Pair<String,String> playerChar = it.getKey();
@@ -336,6 +353,10 @@ public class DatabaseHelper {
 
             getCharacterStatistics( playerId, charName ).setValue( result );
         }
+
+        // remove previous "player vs player" statistics
+        // (both overall and by character)
+        mUserHome.child(PLAYER_VS_PLAYER_DIR);
 
         // update database for each player vs player combo
         Log.d( TAG, "Player to player statistics" + playerToPlayerCounter.size());

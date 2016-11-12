@@ -5,6 +5,7 @@
     <string name="action_lucky">Random Choice</string>
     <string name="action_results">View Results</string>
     <string name="action_backup">Backup Data</string>
+    <string name="action_learn">Learning Choice</string>
     <string name="action_regenerate_stats">Regenerate Statistics</string>
     <string name="action_show_stats1">Show P1 Stats</string>
     <string name="action_show_stats2">Show P2 Stats</string>
