@@ -102,15 +102,18 @@ public class RandomSelector {
         int most = getMostBattles();
 
         int discoverIndex = -1;
-        int bestScore = -1;
+        int maximumWins = -1;
+        int actualWins = -1;
 
         for ( int idx=1; idx<chars.size(); idx++) {
             CharacterPreference character = chars.get(idx);
             if ( character.score > 1 ) {
                 // find most wins possible from this character
-                int currentScore = character.getMaximumWins(most);
-                if (currentScore > bestScore) {
-                    bestScore = currentScore;
+                int currentMaximum = character.getMaximumWins(most);
+                int currentActual = character.getWinCount();
+                if (currentMaximum > maximumWins && currentActual > actualWins) {
+                    maximumWins = currentMaximum;
+                    actualWins = currentActual;
                     discoverIndex = idx;
                 }
             }

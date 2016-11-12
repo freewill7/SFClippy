@@ -371,12 +371,14 @@ public class StatsCharList extends Fragment {
             int maxBattles = mStatistics.maxCharBattles;
             int actualWins = pref.getWinCount();
             int maxWins = pref.getMaximumWins(maxBattles);
-
+            int margin = maxWins - actualWins;
 
             vh.mCharName.setText( pref.name );
             vh.mCharStat.setText(
-                    String.format(Locale.UK, "%d max (%d actual)",
-                            maxWins, actualWins ) );
+                    String.format(Locale.UK, "%d%% (+- %d%%)",
+                            (100 * maxWins) / maxBattles,
+                            (100 * margin) / maxBattles )
+            );
         }
     }
 
