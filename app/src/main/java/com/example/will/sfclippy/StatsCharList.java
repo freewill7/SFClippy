@@ -62,6 +62,14 @@ public class StatsCharList extends Fragment {
         void viewCharacterResults( String characterName );
     }
 
+    public static String getCharacterName( CharacterPreference character ) {
+        if ( character.score == 1 ) {
+            return character.name + " (X)";
+        } else {
+            return character.name;
+        }
+    }
+
     /**
      * One of the views within the RecyclerView.
      */
@@ -125,7 +133,7 @@ public class StatsCharList extends Fragment {
                 ArrayList<CharacterPreference> preferences = new ArrayList<>();
                 for ( DataSnapshot snap : snapshot.getChildren() ) {
                     CharacterPreference pref = snap.getValue(CharacterPreference.class);
-                    if ( null != pref && pref.score > 1 ) {
+                    if ( null != pref ) {
                         // update max statistics
                         if ( pref.getBattleCount() > maxBattles ) {
                             maxBattles = pref.getBattleCount();
@@ -213,7 +221,7 @@ public class StatsCharList extends Fragment {
 
     private static class FormatWins implements CharFormatter {
         public void bindValue( ViewHolder vh, CharacterPreference pref ) {
-            vh.mCharName.setText( pref.name );
+            vh.mCharName.setText( getCharacterName(pref) );
             vh.mCharStat.setText(
                     String.format(Locale.UK, "%d wins", pref.getWinCount() )
             );
@@ -229,7 +237,7 @@ public class StatsCharList extends Fragment {
 
     private static class FormatLosses implements CharFormatter {
         public void bindValue( ViewHolder vh, CharacterPreference pref ) {
-            vh.mCharName.setText( pref.name );
+            vh.mCharName.setText( getCharacterName(pref) );
             vh.mCharStat.setText(
                     String.format(Locale.UK, "%d losses", pref.getLossCount() ) );
         }
@@ -244,7 +252,7 @@ public class StatsCharList extends Fragment {
 
     private static class FormatDifference implements CharFormatter {
         public void bindValue( ViewHolder vh, CharacterPreference pref ) {
-            vh.mCharName.setText( pref.name );
+            vh.mCharName.setText( getCharacterName(pref) );
             vh.mCharStat.setText(
                     String.format(Locale.UK, "%d (win-lose)", pref.getDifference() )
             );
@@ -260,7 +268,7 @@ public class StatsCharList extends Fragment {
 
     private static class FormatPercent implements CharFormatter {
         public void bindValue( ViewHolder vh, CharacterPreference pref ) {
-            vh.mCharName.setText( pref.name );
+            vh.mCharName.setText( getCharacterName(pref) );
             vh.mCharStat.setText(
                     String.format(Locale.UK, "%d%% (of %d)",
                             pref.getWinPercentage(),
@@ -278,7 +286,7 @@ public class StatsCharList extends Fragment {
 
     private static class FormatRun implements CharFormatter {
         public void bindValue( ViewHolder vh, CharacterPreference pref ) {
-            vh.mCharName.setText( pref.name );
+            vh.mCharName.setText( getCharacterName(pref) );
             vh.mCharStat.setText(
                     String.format(Locale.UK, "%d win run", pref.getWinningRun())
             );
@@ -294,7 +302,7 @@ public class StatsCharList extends Fragment {
 
     private static class FormatPlayed implements CharFormatter {
         public void bindValue( ViewHolder vh, CharacterPreference pref ) {
-            vh.mCharName.setText( pref.name );
+            vh.mCharName.setText( getCharacterName(pref) );
             vh.mCharStat.setText(
                     String.format(Locale.UK, "%d outings", pref.getBattleCount())
             );
@@ -334,7 +342,7 @@ public class StatsCharList extends Fragment {
             int predicted = pref.getPredictedWins(maxBattles);
             int virtual = predicted - current;
 
-            vh.mCharName.setText( pref.name );
+            vh.mCharName.setText( getCharacterName(pref) );
             vh.mCharStat.setText(
                     String.format(Locale.UK, "%d%% (+/- %d%%)",
                             (100 * predicted) / maxBattles,
@@ -350,6 +358,14 @@ public class StatsCharList extends Fragment {
         }
 
         public int compare( CharacterPreference a, CharacterPreference b ) {
+            // put less preferred options at the bottom
+            if ( a.score == 1 && b.score > 1 ) {
+                return 1;
+            } else if ( b.score == 1 && a.score > 1 ) {
+                return -1;
+            }
+
+            //
             int diff = b.getMaximumWins( mStatistics.maxCharBattles)
              - a.getMaximumWins( mStatistics.maxCharBattles );
             if ( 0 == diff ) {
@@ -373,7 +389,7 @@ public class StatsCharList extends Fragment {
             int maxWins = pref.getMaximumWins(maxBattles);
             int margin = maxWins - actualWins;
 
-            vh.mCharName.setText( pref.name );
+            vh.mCharName.setText( getCharacterName(pref) );
             vh.mCharStat.setText(
                     String.format(Locale.UK, "%d%% (+- %d%%)",
                             (100 * maxWins) / maxBattles,

@@ -80,7 +80,11 @@ public class BattleCounter {
     }
 
     public int getWinPercentage( ) {
-        return (100 * wins) / battles;
+        if ( 0 == battles ) {
+            return 0;
+        } else {
+            return (100 * wins) / battles;
+        }
     }
 
     public int getWinningRun( ) {

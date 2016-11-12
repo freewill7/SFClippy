@@ -81,7 +81,7 @@ public class CharacterPreference {
     }
 
     public int getWinPercentage( ) {
-        int ret = 100;
+        int ret = 0;
         if ( null != statistics ) {
             ret = statistics.getWinPercentage();
         }
