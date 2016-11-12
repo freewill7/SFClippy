@@ -354,7 +354,7 @@ public class StatsCharList extends Fragment {
              - a.getMaximumWins( mStatistics.maxCharBattles );
             if ( 0 == diff ) {
                 // return the character with least battles
-                diff = a.getBattleCount() - b.getBattleCount();
+                diff = b.getBattleCount() - a.getBattleCount();
             }
             return diff;
         }

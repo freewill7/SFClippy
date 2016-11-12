@@ -111,7 +111,8 @@ public class RandomSelector {
                 // find most wins possible from this character
                 int currentMaximum = character.getMaximumWins(most);
                 int currentActual = character.getWinCount();
-                if (currentMaximum > maximumWins && currentActual > actualWins) {
+                if (currentMaximum > maximumWins ||
+                        (currentMaximum == maximumWins && currentActual > actualWins) ) {
                     maximumWins = currentMaximum;
                     actualWins = currentActual;
                     discoverIndex = idx;
